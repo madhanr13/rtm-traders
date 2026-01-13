@@ -106,13 +106,11 @@ app.get('/api/records', authenticateToken, async (req, res) => {
             id: record._id,
             date: record.date,
             vehicleNumber: record.vehicleNumber,
-            city: record.city,
             destination: record.destination,
             weightInTons: record.weightInTons,
             ratePerTon: record.ratePerTon,
             amountSpend: record.amountSpend,
             rateWeFixed: record.rateWeFixed,
-            extraSpend: record.extraSpend,
             totalProfit: record.totalProfit
         }));
         res.json(formattedRecords);
@@ -135,13 +133,11 @@ app.post('/api/records', authenticateToken, async (req, res) => {
         const newRecord = new RecordModel({
             date: req.body.date,
             vehicleNumber: req.body.vehicleNumber,
-            city: req.body.city,
             destination: req.body.destination,
             weightInTons: parseFloat(req.body.weightInTons),
             ratePerTon: parseFloat(req.body.ratePerTon),
             amountSpend: parseFloat(req.body.amountSpend),
             rateWeFixed: parseFloat(req.body.rateWeFixed),
-            extraSpend: parseFloat(req.body.extraSpend),
             totalProfit: parseFloat(req.body.totalProfit)
         });
         
@@ -154,13 +150,11 @@ app.post('/api/records', authenticateToken, async (req, res) => {
             id: savedRecord._id,
             date: savedRecord.date,
             vehicleNumber: savedRecord.vehicleNumber,
-            city: savedRecord.city,
             destination: savedRecord.destination,
             weightInTons: savedRecord.weightInTons,
             ratePerTon: savedRecord.ratePerTon,
             amountSpend: savedRecord.amountSpend,
             rateWeFixed: savedRecord.rateWeFixed,
-            extraSpend: savedRecord.extraSpend,
             totalProfit: savedRecord.totalProfit
         };
         
@@ -186,13 +180,11 @@ app.put('/api/records/:id', authenticateToken, async (req, res) => {
             {
                 date: req.body.date,
                 vehicleNumber: req.body.vehicleNumber,
-                city: req.body.city,
                 destination: req.body.destination,
                 weightInTons: parseFloat(req.body.weightInTons),
                 ratePerTon: parseFloat(req.body.ratePerTon),
                 amountSpend: parseFloat(req.body.amountSpend),
                 rateWeFixed: parseFloat(req.body.rateWeFixed),
-                extraSpend: parseFloat(req.body.extraSpend),
                 totalProfit: parseFloat(req.body.totalProfit)
             },
             { new: true }
@@ -207,13 +199,11 @@ app.put('/api/records/:id', authenticateToken, async (req, res) => {
             id: updatedRecord._id,
             date: updatedRecord.date,
             vehicleNumber: updatedRecord.vehicleNumber,
-            city: updatedRecord.city,
             destination: updatedRecord.destination,
             weightInTons: updatedRecord.weightInTons,
             ratePerTon: updatedRecord.ratePerTon,
             amountSpend: updatedRecord.amountSpend,
             rateWeFixed: updatedRecord.rateWeFixed,
-            extraSpend: updatedRecord.extraSpend,
             totalProfit: updatedRecord.totalProfit
         };
         

@@ -166,20 +166,6 @@
                         <span class="text-xs text-gray-500 dark:text-slate-500">Total deliveries</span>
                     </div>
                 </div>
-                
-                <!-- Extra Spend Card -->
-                <div class="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-500/10 dark:to-orange-600/10 backdrop-blur-sm rounded-xl p-6 border border-orange-200 dark:border-orange-500/20 hover:border-orange-500/40 transition">
-                    <div class="flex items-start justify-between mb-4">
-                        <div class="p-3 bg-orange-500/20 rounded-lg">
-                            <i class="fas fa-hand-holding-usd text-orange-600 dark:text-orange-400 text-2xl"></i>
-                        </div>
-                    </div>
-                    <div>
-                        <h3 class="text-gray-600 dark:text-slate-400 text-sm font-medium mb-1">Extra Spend</h3>
-                        <p class="text-3xl font-bold text-gray-900 dark:text-white mb-1" id="driverExtras">₹0</p>
-                        <span class="text-xs text-gray-500 dark:text-slate-500">Additional costs</span>
-                    </div>
-                </div>
             </div>
             
             <!-- Charts Section -->
@@ -264,12 +250,10 @@
                             <tr>
                                 <th class="px-4 py-3 text-left font-semibold">Date</th>
                                 <th class="px-4 py-3 text-left font-semibold">Vehicle Number</th>
-                                <th class="px-4 py-3 text-left font-semibold">City</th>
                                 <th class="px-4 py-3 text-left font-semibold">Company</th>
                                 <th class="px-4 py-3 text-left font-semibold">Ton × Rate</th>
                                 <th class="px-4 py-3 text-left font-semibold">Amount</th>
                                 <th class="px-4 py-3 text-left font-semibold">Rate Fixed</th>
-                                <th class="px-4 py-3 text-left font-semibold">Extra Spend</th>
                                 <th class="px-4 py-3 text-left font-semibold">Profit</th>
                                 <th class="px-4 py-3 text-left font-semibold">Actions</th>
                             </tr>
@@ -309,47 +293,34 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="city" class="modal-label block text-sm font-medium text-slate-300 mb-2">City</label>
-                        <input type="text" id="city" required placeholder="Enter city name"
+                        <label for="destination" class="modal-label block text-sm font-medium text-slate-300 mb-2">Company</label>
+                        <input type="text" id="destination" required placeholder="Enter company name"
                                class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <div>
-                        <label for="destination" class="modal-label block text-sm font-medium text-slate-300 mb-2">Destination</label>
-                        <input type="text" id="destination" required placeholder="Enter destination"
-                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="weightInTons" class="modal-label block text-sm font-medium text-slate-300 mb-2">Weight in Tons</label>
                         <input type="number" id="weightInTons" required placeholder="Enter weight" step="0.001" min="0"
                                class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="ratePerTon" class="modal-label block text-sm font-medium text-slate-300 mb-2">Rate per Ton (₹)</label>
                         <input type="number" id="ratePerTon" required placeholder="Purchase rate" step="0.01"
                                class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                </div>
-                
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <label for="amountSpend" class="modal-label block text-sm font-medium text-slate-300 mb-2">Amount Spend (₹)</label>
                         <input type="number" id="amountSpend" required placeholder="Total spent" step="0.01"
                                class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <div>
-                        <label for="rateWeFixed" class="modal-label block text-sm font-medium text-slate-300 mb-2">Rate Fixed (₹)</label>
-                        <input type="number" id="rateWeFixed" required placeholder="Selling rate" step="0.01"
-                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    </div>
                 </div>
                 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label for="extraSpend" class="modal-label block text-sm font-medium text-slate-300 mb-2">Extra Spend (₹)</label>
-                        <input type="number" id="extraSpend" required placeholder="Food, labor, etc." step="0.01"
+                        <label for="rateWeFixed" class="modal-label block text-sm font-medium text-slate-300 mb-2">Rate Fixed (₹)</label>
+                        <input type="number" id="rateWeFixed" required placeholder="Selling rate" step="0.01"
                                class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     <div>

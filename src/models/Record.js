@@ -9,10 +9,6 @@ const recordSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    city: {
-        type: String,
-        required: true
-    },
     destination: {
         type: String,
         required: true
@@ -30,10 +26,6 @@ const recordSchema = new mongoose.Schema({
         required: true
     },
     rateWeFixed: {
-        type: Number,
-        required: true
-    },
-    extraSpend: {
         type: Number,
         required: true
     },

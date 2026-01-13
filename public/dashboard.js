@@ -443,12 +443,10 @@ function renderRecords() {
         tr.innerHTML = `
             <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatDate(record.date)}</td>
             <td class="px-4 py-3 text-gray-900 dark:text-white font-medium">${record.vehicleNumber}</td>
-            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${record.city}</td>
             <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${record.destination}</td>
             <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${parseFloat(record.weightInTons).toFixed(3)} × ${formatCurrency(record.ratePerTon)}</td>
             <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatCurrency(record.amountSpend)}</td>
             <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatCurrency(record.rateWeFixed)}</td>
-            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatCurrency(record.extraSpend)}</td>
             <td class="px-4 py-3 ${profitClass}">${formatCurrency(record.totalProfit)}</td>
             <td class="px-4 py-3 text-center">
                 <button onclick="editRecord('${record.id}')" class="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/10 rounded transition">
@@ -474,8 +472,8 @@ function sortData(data, sortOrder) {
             compareA = new Date(a.date);
             compareB = new Date(b.date);
         } else if (field === 'profit') {
-            compareA = a.profit;
-            compareB = b.profit;
+            compareA = parseFloat(a.totalProfit);
+            compareB = parseFloat(b.totalProfit);
         }
         
         if (direction === 'asc') {
@@ -515,13 +513,11 @@ function editRecord(id) {
     document.getElementById('recordId').value = record.id;
     document.getElementById('recordDate').value = record.date;
     document.getElementById('vehicleNumber').value = record.vehicleNumber;
-    document.getElementById('city').value = record.city;
     document.getElementById('destination').value = record.destination;
     document.getElementById('weightInTons').value = record.weightInTons;
     document.getElementById('ratePerTon').value = record.ratePerTon;
     document.getElementById('amountSpend').value = record.amountSpend;
     document.getElementById('rateWeFixed').value = record.rateWeFixed;
-    document.getElementById('extraSpend').value = record.extraSpend;
     document.getElementById('totalProfit').value = record.totalProfit;
     const modal = document.getElementById('recordModal');
     modal.classList.remove('hidden');
@@ -562,16 +558,14 @@ async function handleRecordFormSubmit(e) {
         const id = document.getElementById('recordId').value;
         const date = document.getElementById('recordDate').value;
         const vehicleNumber = document.getElementById('vehicleNumber').value;
-        const city = document.getElementById('city').value;
         const destination = document.getElementById('destination').value;
         const weightInTons = parseFloat(document.getElementById('weightInTons').value);
         const ratePerTon = parseFloat(document.getElementById('ratePerTon').value);
         const amountSpend = parseFloat(document.getElementById('amountSpend').value);
         const rateWeFixed = parseFloat(document.getElementById('rateWeFixed').value);
-        const extraSpend = parseFloat(document.getElementById('extraSpend').value);
         const totalProfit = parseFloat(document.getElementById('totalProfit').value);
         
-        const recordData = { date, vehicleNumber, city, destination, weightInTons, ratePerTon, amountSpend, rateWeFixed, extraSpend, totalProfit };
+        const recordData = { date, vehicleNumber, destination, weightInTons, ratePerTon, amountSpend, rateWeFixed, totalProfit };
         
         if (id) {
             // Edit existing record
@@ -582,13 +576,11 @@ async function handleRecordFormSubmit(e) {
             if (record) {
                 record.date = date;
                 record.vehicleNumber = vehicleNumber;
-                record.city = city;
                 record.destination = destination;
                 record.weightInTons = weightInTons;
                 record.ratePerTon = ratePerTon;
                 record.amountSpend = amountSpend;
                 record.rateWeFixed = rateWeFixed;
-                record.extraSpend = extraSpend;
                 record.totalProfit = totalProfit;
             }
         } else {
