@@ -3,6 +3,8 @@ let API_URL = 'http://localhost:3000/api'; // Default fallback
 let businessRecords = [];
 let revenueChart, expenseChart;
 let dataSortOrder = 'date-desc';
+let selectedMonth = 'all';
+const MAX_DISPLAY_RECORDS = 15;
 
 // Fetch API URL from server config
 async function fetchConfig() {
@@ -66,10 +68,12 @@ async function verifyToken(token) {
 // Get auth headers for API requests
 function getAuthHeaders() {
     const token = localStorage.getItem('authToken');
-    return {
+    const headers = {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${token}`
     };
+    console.log('🔑 Auth headers prepared, token present:', !!token);
+    return headers;
 }
 
 async function loadDataFromCSV() {
@@ -88,6 +92,10 @@ async function loadDataFromCSV() {
         }
         
         businessRecords = await response.json();
+        
+        // Populate month filter
+        populateMonthFilter();
+        
         renderRecords();
         updateStatistics();
         initializeCharts();
@@ -100,10 +108,46 @@ async function loadDataFromCSV() {
     }
 }
 
+// Populate month filter dropdown with available months
+function populateMonthFilter() {
+    const monthFilter = document.getElementById('monthFilter');
+    if (!monthFilter) return;
+    
+    // Get unique months from records
+    const monthsSet = new Set();
+    businessRecords.forEach(record => {
+        const date = new Date(record.date);
+        const monthYear = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        monthsSet.add(monthYear);
+    });
+    
+    // Sort months in descending order (newest first)
+    const months = Array.from(monthsSet).sort((a, b) => b.localeCompare(a));
+    
+    // Clear existing options except "All Months"
+    monthFilter.innerHTML = '<option value="all">All Months</option>';
+    
+    // Add month options
+    months.forEach(monthYear => {
+        const [year, month] = monthYear.split('-');
+        const date = new Date(year, parseInt(month) - 1);
+        const monthName = date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+        
+        const option = document.createElement('option');
+        option.value = monthYear;
+        option.textContent = monthName;
+        monthFilter.appendChild(option);
+    });
+}
+
 async function saveRecordToCSV(record, isUpdate = false) {
     try {
         const url = isUpdate ? `${API_URL}/records/${record.id}` : `${API_URL}/records`;
         const method = isUpdate ? 'PUT' : 'POST';
+        
+        console.log('🚀 Sending request to:', url);
+        console.log('📦 Method:', method);
+        console.log('📝 Data:', record);
         
         const response = await fetch(url, {
             method: method,
@@ -111,12 +155,20 @@ async function saveRecordToCSV(record, isUpdate = false) {
             body: JSON.stringify(record)
         });
         
-        if (!response.ok) throw new Error('Failed to save record');
+        console.log('📡 Response status:', response.status);
         
-        return await response.json();
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+            console.error('❌ Server error:', errorData);
+            throw new Error(errorData.error || 'Failed to save record');
+        }
+        
+        const result = await response.json();
+        console.log('✅ Record saved successfully:', result);
+        return result;
     } catch (error) {
-        console.error('Error saving record:', error);
-        showNotification('Failed to save record. Please check server connection.', 'error');
+        console.error('❌ Error saving record:', error);
+        showNotification(`Failed to save record: ${error.message}`, 'error');
         throw error;
     }
 }
@@ -165,16 +217,16 @@ function initializeDashboard() {
 function openLogoutModal() {
     const modal = document.getElementById('logoutModal');
     if (modal) {
-        modal.style.display = 'flex';
-        setTimeout(() => modal.classList.add('active'), 10);
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
     }
 }
 
 function closeLogoutModal() {
     const modal = document.getElementById('logoutModal');
     if (modal) {
-        modal.classList.remove('active');
-        setTimeout(() => modal.style.display = 'none', 300);
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
     }
 }
 
@@ -218,6 +270,15 @@ function setupEventListeners() {
     if (sortData) {
         sortData.addEventListener('change', function(e) {
             dataSortOrder = e.target.value;
+            renderRecords();
+        });
+    }
+    
+    // Month Filter Dropdown
+    const monthFilter = document.getElementById('monthFilter');
+    if (monthFilter) {
+        monthFilter.addEventListener('change', function(e) {
+            selectedMonth = e.target.value;
             renderRecords();
         });
     }
@@ -329,22 +390,37 @@ function renderRecords() {
     
     tbody.innerHTML = '';
     
+    // Filter records by selected month
+    let filteredRecords = businessRecords;
+    if (selectedMonth !== 'all') {
+        filteredRecords = businessRecords.filter(record => {
+            const recordDate = new Date(record.date);
+            const monthYear = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}`;
+            return monthYear === selectedMonth;
+        });
+    }
+    
     // Update record count
     const recordCountElem = document.getElementById('recordCount');
     if (recordCountElem) {
-        const count = businessRecords.length;
-        recordCountElem.textContent = `${count} record${count !== 1 ? 's' : ''}`;
+        const totalCount = businessRecords.length;
+        const filteredCount = filteredRecords.length;
+        if (selectedMonth === 'all') {
+            recordCountElem.textContent = `Showing latest ${Math.min(filteredCount, MAX_DISPLAY_RECORDS)} of ${totalCount} record${totalCount !== 1 ? 's' : ''}`;
+        } else {
+            recordCountElem.textContent = `Showing all ${filteredCount} record${filteredCount !== 1 ? 's' : ''} for selected month (${totalCount} total)`;
+        }
     }
     
     // Check if no data
-    if (businessRecords.length === 0) {
+    if (filteredRecords.length === 0) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td colspan="10" class="no-data-state">
-                <div>
-                    <i class="fas fa-database no-data-icon"></i>
-                    <h3>No Records Found</h3>
-                    <p>Start adding business records to track your performance</p>
+            <td colspan="10" class="px-4 py-12 text-center">
+                <div class="flex flex-col items-center gap-3">
+                    <i class="fas fa-database text-4xl text-gray-400 dark:text-slate-600"></i>
+                    <h3 class="text-lg font-semibold text-gray-600 dark:text-slate-400">No Records Found</h3>
+                    <p class="text-sm text-gray-500 dark:text-slate-500">Start adding business records to track your performance</p>
                 </div>
             </td>
         `;
@@ -353,26 +429,34 @@ function renderRecords() {
     }
     
     // Sort the data
-    const sortedRecords = sortData([...businessRecords], dataSortOrder);
+    const sortedRecords = sortData([...filteredRecords], dataSortOrder);
     
-    sortedRecords.forEach(record => {
+    // Show only the latest 15 records if "All Months" is selected, otherwise show all records for the month
+    const displayRecords = selectedMonth === 'all' ? sortedRecords.slice(0, MAX_DISPLAY_RECORDS) : sortedRecords;
+    
+    displayRecords.forEach(record => {
         const tr = document.createElement('tr');
         const profit = parseFloat(record.totalProfit);
-        const profitClass = profit >= 0 ? 'profit-positive' : 'profit-negative';
+        const profitClass = profit >= 0 ? 'text-green-600 dark:text-green-400 font-semibold' : 'text-red-600 dark:text-red-400 font-semibold';
         
+        tr.className = 'hover:bg-gray-50 dark:hover:bg-slate-800/50 transition';
         tr.innerHTML = `
-            <td>${formatDate(record.date)}</td>
-            <td><strong>${record.vehicleNumber}</strong></td>
-            <td>${record.city}</td>
-            <td>${record.destination}</td>
-            <td>${parseFloat(record.weightInTons).toFixed(3)} × ${formatCurrency(record.ratePerTon)}</td>
-            <td>${formatCurrency(record.amountSpend)}</td>
-            <td>${formatCurrency(record.rateWeFixed)}</td>
-            <td>${formatCurrency(record.extraSpend)}</td>
-            <td class="${profitClass}"><strong>${formatCurrency(record.totalProfit)}</strong></td>
-            <td style="text-align: center;">
-                <i class="fas fa-edit edit-icon" onclick="editRecord(${record.id})"></i>
-                <i class="fas fa-trash delete-icon" onclick="deleteRecord(${record.id})"></i>
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatDate(record.date)}</td>
+            <td class="px-4 py-3 text-gray-900 dark:text-white font-medium">${record.vehicleNumber}</td>
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${record.city}</td>
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${record.destination}</td>
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${parseFloat(record.weightInTons).toFixed(3)} × ${formatCurrency(record.ratePerTon)}</td>
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatCurrency(record.amountSpend)}</td>
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatCurrency(record.rateWeFixed)}</td>
+            <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatCurrency(record.extraSpend)}</td>
+            <td class="px-4 py-3 ${profitClass}">${formatCurrency(record.totalProfit)}</td>
+            <td class="px-4 py-3 text-center">
+                <button onclick="editRecord('${record.id}')" class="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/10 rounded transition">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button onclick="deleteRecord('${record.id}')" class="p-2 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/10 rounded transition">
+                    <i class="fas fa-trash"></i>
+                </button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -410,11 +494,15 @@ function openAddRecordModal() {
     // Set today's date as default
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('recordDate').value = today;
-    document.getElementById('recordModal').classList.add('active');
+    const modal = document.getElementById('recordModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 function closeRecordModal() {
-    document.getElementById('recordModal').classList.remove('active');
+    const modal = document.getElementById('recordModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
 }
 
 window.closeRecordModal = closeRecordModal;
@@ -435,7 +523,9 @@ function editRecord(id) {
     document.getElementById('rateWeFixed').value = record.rateWeFixed;
     document.getElementById('extraSpend').value = record.extraSpend;
     document.getElementById('totalProfit').value = record.totalProfit;
-    document.getElementById('recordModal').classList.add('active');
+    const modal = document.getElementById('recordModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
 }
 
 window.editRecord = editRecord;
@@ -445,11 +535,14 @@ async function deleteRecord(id) {
         try {
             await deleteRecordFromCSV(id);
             businessRecords = businessRecords.filter(r => r.id !== id);
+            populateMonthFilter();
             renderRecords();
             updateStatistics();
             updateCharts();
+            showNotification('Record deleted successfully!', 'success');
         } catch (error) {
             console.error('Delete failed:', error);
+            showNotification('Failed to delete record', 'error');
         }
     }
 }
@@ -459,27 +552,33 @@ window.deleteRecord = deleteRecord;
 async function handleRecordFormSubmit(e) {
     e.preventDefault();
     
-    const id = document.getElementById('recordId').value;
-    const date = document.getElementById('recordDate').value;
-    const vehicleNumber = document.getElementById('vehicleNumber').value;
-    const city = document.getElementById('city').value;
-    const destination = document.getElementById('destination').value;
-    const weightInTons = parseFloat(document.getElementById('weightInTons').value);
-    const ratePerTon = parseFloat(document.getElementById('ratePerTon').value);
-    const amountSpend = parseFloat(document.getElementById('amountSpend').value);
-    const rateWeFixed = parseFloat(document.getElementById('rateWeFixed').value);
-    const extraSpend = parseFloat(document.getElementById('extraSpend').value);
-    const totalProfit = parseFloat(document.getElementById('totalProfit').value);
-    
-    const recordData = { date, vehicleNumber, city, destination, weightInTons, ratePerTon, amountSpend, rateWeFixed, extraSpend, totalProfit };
+    // Prevent multiple submissions
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    if (submitBtn.disabled) return;
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Saving...';
     
     try {
+        const id = document.getElementById('recordId').value;
+        const date = document.getElementById('recordDate').value;
+        const vehicleNumber = document.getElementById('vehicleNumber').value;
+        const city = document.getElementById('city').value;
+        const destination = document.getElementById('destination').value;
+        const weightInTons = parseFloat(document.getElementById('weightInTons').value);
+        const ratePerTon = parseFloat(document.getElementById('ratePerTon').value);
+        const amountSpend = parseFloat(document.getElementById('amountSpend').value);
+        const rateWeFixed = parseFloat(document.getElementById('rateWeFixed').value);
+        const extraSpend = parseFloat(document.getElementById('extraSpend').value);
+        const totalProfit = parseFloat(document.getElementById('totalProfit').value);
+        
+        const recordData = { date, vehicleNumber, city, destination, weightInTons, ratePerTon, amountSpend, rateWeFixed, extraSpend, totalProfit };
+        
         if (id) {
             // Edit existing record
-            recordData.id = parseInt(id);
+            recordData.id = id;
             await saveRecordToCSV(recordData, true);
             
-            const record = businessRecords.find(r => r.id === parseInt(id));
+            const record = businessRecords.find(r => r.id === id);
             if (record) {
                 record.date = date;
                 record.vehicleNumber = vehicleNumber;
@@ -498,12 +597,18 @@ async function handleRecordFormSubmit(e) {
             businessRecords.push(savedRecord);
         }
         
+        populateMonthFilter();
         renderRecords();
         updateStatistics();
         updateCharts();
         closeRecordModal();
+        showNotification('Record saved successfully!', 'success');
     } catch (error) {
         console.error('Save failed:', error);
+        showNotification('Failed to save record: ' + error.message, 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save';
     }
 }
 
@@ -877,6 +982,14 @@ function showNotification(message, type = 'info') {
 function initializeTheme() {
     const savedTheme = localStorage.getItem('theme') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    // Set Tailwind dark mode class
+    if (savedTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+    
     updateThemeIcon(savedTheme);
 }
 
@@ -885,6 +998,14 @@ function toggleTheme() {
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
     
     document.documentElement.setAttribute('data-theme', newTheme);
+    
+    // Toggle Tailwind dark mode class
+    if (newTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+    } else {
+        document.documentElement.classList.remove('dark');
+    }
+    
     localStorage.setItem('theme', newTheme);
     updateThemeIcon(newTheme);
     

@@ -1,12 +1,11 @@
 require('dotenv').config();
 const express = require('express');
+const mongoose = require('mongoose');
 const cors = require('cors');
-const fs = require('fs');
 const path = require('path');
-const csv = require('csv-parser');
-const createCsvWriter = require('csv-writer').createObjectCsvWriter;
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
+const { getRecordModel } = require('./models/Record');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -14,6 +13,18 @@ const PORT = process.env.PORT || 3000;
 // JWT Configuration from environment variables
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '30m';
+
+// MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/rtm-traders';
+
+mongoose.connect(MONGODB_URI)
+    .then(() => {
+        console.log('✅ Connected to MongoDB successfully');
+    })
+    .catch((error) => {
+        console.error('❌ MongoDB connection error:', error);
+        process.exit(1);
+    });
 
 // User credentials from environment variables
 const USERS = {
@@ -28,6 +39,12 @@ const USERS = {
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Request logging middleware
+app.use((req, res, next) => {
+    console.log(`${req.method} ${req.path} - ${new Date().toISOString()}`);
+    next();
+});
 
 // JWT Authentication Middleware
 function authenticateToken(req, res, next) {
@@ -47,8 +64,6 @@ function authenticateToken(req, res, next) {
     });
 }
 
-const CSV_FILE = path.join(__dirname, '../data.csv');
-
 // Config endpoint - serves API URL to frontend
 app.get('/api/config', (req, res) => {
     res.json({
@@ -56,63 +71,53 @@ app.get('/api/config', (req, res) => {
     });
 });
 
-// Read all records from CSV
-function readRecordsFromCSV() {
-    return new Promise((resolve, reject) => {
-        const records = [];
-        fs.createReadStream(CSV_FILE)
-            .pipe(csv())
-            .on('data', (row) => {
-                records.push({
-                    id: parseInt(row.id),
-                    date: row.date,
-                    vehicleNumber: row.vehicleNumber,
-                    city: row.city,
-                    destination: row.destination,
-                    weightInTons: parseFloat(row.weightInTons),
-                    ratePerTon: parseFloat(row.ratePerTon),
-                    amountSpend: parseFloat(row.amountSpend),
-                    rateWeFixed: parseFloat(row.rateWeFixed),
-                    extraSpend: parseFloat(row.extraSpend),
-                    totalProfit: parseFloat(row.totalProfit)
-                });
-            })
-            .on('end', () => resolve(records))
-            .on('error', reject);
-    });
-}
-
-// Write records to CSV
-function writeRecordsToCSV(records) {
-    const csvWriter = createCsvWriter({
-        path: CSV_FILE,
-        header: [
-            { id: 'id', title: 'id' },
-            { id: 'date', title: 'date' },
-            { id: 'vehicleNumber', title: 'vehicleNumber' },
-            { id: 'city', title: 'city' },
-            { id: 'destination', title: 'destination' },
-            { id: 'weightInTons', title: 'weightInTons' },
-            { id: 'ratePerTon', title: 'ratePerTon' },
-            { id: 'amountSpend', title: 'amountSpend' },
-            { id: 'rateWeFixed', title: 'rateWeFixed' },
-            { id: 'extraSpend', title: 'extraSpend' },
-            { id: 'totalProfit', title: 'totalProfit' }
-        ]
-    });
-
-    return csvWriter.writeRecords(records);
-}
-
 // API Routes (Protected with JWT)
 
-// Get all records
+// Get all records (from all monthly collections)
 app.get('/api/records', authenticateToken, async (req, res) => {
     try {
-        const records = await readRecordsFromCSV();
-        res.json(records);
+        console.log('📊 Fetching all records from MongoDB...');
+        
+        // Get all collection names that match the pattern records_YYYY_MM
+        const db = mongoose.connection.db;
+        const collections = await db.listCollections().toArray();
+        const recordCollections = collections
+            .filter(col => col.name.startsWith('records_'))
+            .map(col => col.name);
+        
+        console.log('📁 Found collections:', recordCollections);
+        
+        let allRecords = [];
+        
+        // Fetch records from each monthly collection
+        for (const collectionName of recordCollections) {
+            const Model = mongoose.model(collectionName, require('./models/Record').recordSchema, collectionName);
+            const records = await Model.find();
+            allRecords = allRecords.concat(records);
+        }
+        
+        // Sort by date descending
+        allRecords.sort((a, b) => new Date(b.date) - new Date(a.date));
+        
+        console.log(`✅ Found ${allRecords.length} total records`);
+        
+        // Transform MongoDB documents to match frontend format
+        const formattedRecords = allRecords.map(record => ({
+            id: record._id,
+            date: record.date,
+            vehicleNumber: record.vehicleNumber,
+            city: record.city,
+            destination: record.destination,
+            weightInTons: record.weightInTons,
+            ratePerTon: record.ratePerTon,
+            amountSpend: record.amountSpend,
+            rateWeFixed: record.rateWeFixed,
+            extraSpend: record.extraSpend,
+            totalProfit: record.totalProfit
+        }));
+        res.json(formattedRecords);
     } catch (error) {
-        console.error('Error reading records:', error);
+        console.error('❌ Error reading records:', error);
         res.status(500).json({ error: 'Failed to read records' });
     }
 });
@@ -120,11 +125,14 @@ app.get('/api/records', authenticateToken, async (req, res) => {
 // Add new record
 app.post('/api/records', authenticateToken, async (req, res) => {
     try {
-        const records = await readRecordsFromCSV();
-        const newId = records.length > 0 ? Math.max(...records.map(r => r.id)) + 1 : 1;
+        console.log('📝 Received POST request to add record:', req.body);
         
-        const newRecord = {
-            id: newId,
+        // Get the appropriate model for the record's date
+        const RecordModel = getRecordModel(req.body.date);
+        const collectionName = RecordModel.collection.name;
+        console.log(`📁 Using collection: ${collectionName}`);
+        
+        const newRecord = new RecordModel({
             date: req.body.date,
             vehicleNumber: req.body.vehicleNumber,
             city: req.body.city,
@@ -135,45 +143,81 @@ app.post('/api/records', authenticateToken, async (req, res) => {
             rateWeFixed: parseFloat(req.body.rateWeFixed),
             extraSpend: parseFloat(req.body.extraSpend),
             totalProfit: parseFloat(req.body.totalProfit)
+        });
+        
+        console.log('💾 Attempting to save record to MongoDB...');
+        const savedRecord = await newRecord.save();
+        console.log('✅ Record saved successfully:', savedRecord._id);
+        
+        // Format response to match frontend expectations
+        const formattedRecord = {
+            id: savedRecord._id,
+            date: savedRecord.date,
+            vehicleNumber: savedRecord.vehicleNumber,
+            city: savedRecord.city,
+            destination: savedRecord.destination,
+            weightInTons: savedRecord.weightInTons,
+            ratePerTon: savedRecord.ratePerTon,
+            amountSpend: savedRecord.amountSpend,
+            rateWeFixed: savedRecord.rateWeFixed,
+            extraSpend: savedRecord.extraSpend,
+            totalProfit: savedRecord.totalProfit
         };
         
-        records.push(newRecord);
-        await writeRecordsToCSV(records);
-        
-        res.json(newRecord);
+        res.json(formattedRecord);
     } catch (error) {
-        console.error('Error adding record:', error);
-        res.status(500).json({ error: 'Failed to add record' });
+        console.error('❌ Error adding record:', error);
+        console.error('Error details:', error.message);
+        res.status(500).json({ error: 'Failed to add record', details: error.message });
     }
 });
 
 // Update record
 app.put('/api/records/:id', authenticateToken, async (req, res) => {
     try {
-        const records = await readRecordsFromCSV();
-        const recordId = parseInt(req.params.id);
-        const index = records.findIndex(r => r.id === recordId);
+        const recordId = req.params.id;
         
-        if (index === -1) {
+        // Get the appropriate model for the new date
+        const RecordModel = getRecordModel(req.body.date);
+        console.log(`📝 Updating record in collection: ${RecordModel.collection.name}`);
+        
+        const updatedRecord = await RecordModel.findByIdAndUpdate(
+            recordId,
+            {
+                date: req.body.date,
+                vehicleNumber: req.body.vehicleNumber,
+                city: req.body.city,
+                destination: req.body.destination,
+                weightInTons: parseFloat(req.body.weightInTons),
+                ratePerTon: parseFloat(req.body.ratePerTon),
+                amountSpend: parseFloat(req.body.amountSpend),
+                rateWeFixed: parseFloat(req.body.rateWeFixed),
+                extraSpend: parseFloat(req.body.extraSpend),
+                totalProfit: parseFloat(req.body.totalProfit)
+            },
+            { new: true }
+        );
+        
+        if (!updatedRecord) {
             return res.status(404).json({ error: 'Record not found' });
         }
         
-        records[index] = {
-            id: recordId,
-            date: req.body.date,
-            vehicleNumber: req.body.vehicleNumber,
-            city: req.body.city,
-            destination: req.body.destination,
-            weightInTons: parseFloat(req.body.weightInTons),
-            ratePerTon: parseFloat(req.body.ratePerTon),
-            amountSpend: parseFloat(req.body.amountSpend),
-            rateWeFixed: parseFloat(req.body.rateWeFixed),
-            extraSpend: parseFloat(req.body.extraSpend),
-            totalProfit: parseFloat(req.body.totalProfit)
+        // Format response
+        const formattedRecord = {
+            id: updatedRecord._id,
+            date: updatedRecord.date,
+            vehicleNumber: updatedRecord.vehicleNumber,
+            city: updatedRecord.city,
+            destination: updatedRecord.destination,
+            weightInTons: updatedRecord.weightInTons,
+            ratePerTon: updatedRecord.ratePerTon,
+            amountSpend: updatedRecord.amountSpend,
+            rateWeFixed: updatedRecord.rateWeFixed,
+            extraSpend: updatedRecord.extraSpend,
+            totalProfit: updatedRecord.totalProfit
         };
         
-        await writeRecordsToCSV(records);
-        res.json(records[index]);
+        res.json(formattedRecord);
     } catch (error) {
         console.error('Error updating record:', error);
         res.status(500).json({ error: 'Failed to update record' });
@@ -183,15 +227,30 @@ app.put('/api/records/:id', authenticateToken, async (req, res) => {
 // Delete record
 app.delete('/api/records/:id', authenticateToken, async (req, res) => {
     try {
-        const records = await readRecordsFromCSV();
-        const recordId = parseInt(req.params.id);
-        const filteredRecords = records.filter(r => r.id !== recordId);
+        const recordId = req.params.id;
         
-        if (filteredRecords.length === records.length) {
+        // Try to find and delete from all monthly collections
+        const db = mongoose.connection.db;
+        const collections = await db.listCollections().toArray();
+        const recordCollections = collections
+            .filter(col => col.name.startsWith('records_'))
+            .map(col => col.name);
+        
+        let deletedRecord = null;
+        
+        for (const collectionName of recordCollections) {
+            const Model = mongoose.model(collectionName, require('./models/Record').recordSchema, collectionName);
+            deletedRecord = await Model.findByIdAndDelete(recordId);
+            if (deletedRecord) {
+                console.log(`🗑️  Record deleted from collection: ${collectionName}`);
+                break;
+            }
+        }
+        
+        if (!deletedRecord) {
             return res.status(404).json({ error: 'Record not found' });
         }
         
-        await writeRecordsToCSV(filteredRecords);
         res.json({ message: 'Record deleted successfully' });
     } catch (error) {
         console.error('Error deleting record:', error);
@@ -246,6 +305,6 @@ app.get('/api/verify', authenticateToken, (req, res) => {
 app.listen(PORT, () => {
     console.log(`\n🚀 RTM Traders Dashboard Server Running!`);
     console.log(`📊 Server: http://localhost:${PORT}`);
-    console.log(`📁 CSV File: ${CSV_FILE}`);
-    console.log(`\nOpen http://localhost:${PORT}/index.html in your browser\n`);
+    console.log(`💾 Database: MongoDB (${MONGODB_URI})`);
+    console.log(`\nOpen http://localhost:${PORT} in your browser\n`);
 });

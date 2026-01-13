@@ -36,23 +36,25 @@ A modern, secure business analytics dashboard for managing logistics and transpo
 
 **Backend:**
 - Node.js & Express.js
+- MongoDB with Mongoose ODM
 - JWT (jsonwebtoken)
 - bcrypt for password hashing
-- CSV Parser & Writer
 - CORS enabled
 
 **Frontend:**
 - Vanilla JavaScript (ES6+)
+- Tailwind CSS (Utility-first CSS framework)
 - Chart.js for data visualization
 - Font Awesome icons
 - Google Fonts (Roboto)
-- CSS3 with custom properties
 
 ## 📦 Installation
 
 ### Prerequisites
 - Node.js v18 or higher
 - npm or yarn
+- MongoDB (locally installed or MongoDB Atlas account)
+- MongoDB Compass (optional, for visual database management)
 
 ### Setup Steps
 
@@ -67,7 +69,25 @@ A modern, secure business analytics dashboard for managing logistics and transpo
    npm install
    ```
 
-3. **Configure environment variables**
+3. **Install and start MongoDB**
+   
+   **Option 1: Local MongoDB**
+   - Download and install from [MongoDB Community Server](https://www.mongodb.com/try/download/community)
+   - Start MongoDB service:
+     ```bash
+     # Windows
+     net start MongoDB
+     
+     # macOS/Linux
+     sudo systemctl start mongod
+     ```
+   
+   **Option 2: MongoDB Atlas (Cloud)**
+   - Create free account at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+   - Create a cluster and get connection string
+   - Update `MONGODB_URI` in `.env` with your Atlas connection string
+
+4. **Configure environment variables**
    ```bash
    cp .env.example .env
    ```
@@ -111,15 +131,16 @@ A modern, secure business analytics dashboard for managing logistics and transpo
 ```
 rtm-traders-dashboard/
 ├── src/
-│   └── server.js         # Express server & JWT authentication
+│   ├── models/
+│   │   └── Record.js     # MongoDB schema
+│   └── server.js         # Express server & MongoDB connection
 ├── public/
 │   ├── index.html        # Login page
 │   ├── dashboard.html    # Main dashboard
 │   ├── auth.js          # Authentication logic
 │   ├── dashboard.js     # Dashboard functionality
-│   ├── styles.css       # All styling (light & dark themes)
+│   ├── styles.css.backup # Old CSS (backup)
 │   └── logo.jpg         # Company logo
-├── data.csv            # Data storage (CSV format)
 ├── .env                # Environment variables (not in git)
 ├── .env.example        # Environment template
 ├── .gitignore          # Git ignore rules

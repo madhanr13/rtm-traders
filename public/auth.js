@@ -71,11 +71,11 @@ document.addEventListener('DOMContentLoaded', async function() {
             } else {
                 // Show error message
                 errorMessage.textContent = data.error || 'Invalid username or password. Please try again.';
-                errorMessage.style.display = 'block';
+                errorMessage.classList.remove('hidden');
                 
                 // Reset button
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+                submitBtn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right"></i>';
                 
                 // Shake animation for error
                 loginForm.style.animation = 'shake 0.5s';
@@ -86,11 +86,11 @@ document.addEventListener('DOMContentLoaded', async function() {
         } catch (error) {
             console.error('Login error:', error);
             errorMessage.textContent = 'Connection error. Please ensure the server is running.';
-            errorMessage.style.display = 'block';
+            errorMessage.classList.remove('hidden');
             
             // Reset button
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+            submitBtn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right"></i>';
         }
     });
     
@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const inputs = document.querySelectorAll('input');
     inputs.forEach(input => {
         input.addEventListener('input', function() {
-            errorMessage.style.display = 'none';
+            errorMessage.classList.add('hidden');
         });
     });
 });

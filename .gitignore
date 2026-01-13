@@ -29,3 +29,7 @@ desktop.ini
 # Build
 dist/
 build/
+
+# Backup files
+*.backup
+*.bak

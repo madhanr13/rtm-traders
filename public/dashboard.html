@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="dark" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,273 +7,383 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3b82f6',
+                        'primary-dark': '#2563eb',
+                        slate: {
+                            850: '#0f172a',
+                            750: '#1e293b',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Light theme overrides for inputs and labels */
+        :not(.dark) .modal-input {
+            @apply bg-white border-gray-300 text-gray-900 placeholder-gray-400;
+        }
+        :not(.dark) .modal-label {
+            @apply text-gray-700;
+        }
+        :not(.dark) select {
+            @apply bg-white border-gray-300 text-gray-900;
+        }
+        :not(.dark) .chart-subtitle {
+            @apply text-gray-600;
+        }
+        :not(.dark) .stat-subtitle {
+            @apply text-gray-600;
+        }
+        
+        /* Notification Styles */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            z-index: 9999;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .notification-success {
+            background-color: #10b981;
+            color: white;
+        }
+        
+        .notification-error {
+            background-color: #ef4444;
+            color: white;
+        }
+        
+        .notification-info {
+            background-color: #3b82f6;
+            color: white;
+        }
+        
+        .notification i {
+            font-size: 18px;
+        }
+    </style>
 </head>
-<body class="dashboard-page">
-    <div class="dashboard-container">
-        <!-- Main Content -->
-        <main class="main-content-full">
-            <!-- Top Bar -->
-            <header class="topbar">
-                <div class="topbar-left">
-                    <div class="logo-brand">
-                        <div class="logo-circle">
-                            <img src="logo.jpg" alt="RTM Traders Logo">
+<body class="font-sans bg-gray-50 dark:bg-slate-850 text-gray-900 dark:text-slate-200 min-h-screen transition-colors duration-200">
+    <div class="min-h-screen">
+        <!-- Top Bar -->
+        <header class="bg-white dark:bg-slate-750 border-b border-gray-200 dark:border-slate-700 sticky top-0 z-50 shadow-sm transition-colors duration-200">
+            <div class="max-w-full px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <!-- Logo Section -->
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 overflow-hidden ring-2 ring-blue-500/20">
+                            <img src="logo.jpg" alt="RTM Traders Logo" class="w-full h-full object-cover">
                         </div>
-                        <div class="logo-text">
-                            <h2>RTM TRADERS</h2>
+                        <div>
+                            <h2 class="text-xl font-bold text-gray-900 dark:text-white">RTM TRADERS</h2>
                         </div>
                     </div>
-                </div>
-                <div class="topbar-center">
-                    <div class="welcome-section">
-                        <h1 class="welcome-title">Dashboard Overview</h1>
-                        <div class="date-badge">
-                            <i class="fas fa-calendar-day"></i>
+                    
+                    <!-- Center Section -->
+                    <div class="flex items-center gap-4">
+                        <h1 class="text-2xl font-semibold text-gray-900 dark:text-white">Dashboard Overview</h1>
+                        <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-50 dark:bg-slate-800 rounded-lg text-sm text-gray-700 dark:text-slate-300">
+                            <i class="fas fa-calendar-day text-blue-400"></i>
                             <span id="currentDate"></span>
                         </div>
                     </div>
-                </div>
-                <div class="topbar-right">
-                    <div class="user-section">
-                        <div class="user-avatar-circle">
-                            <i class="fas fa-user-circle"></i>
+                    
+                    <!-- Right Section -->
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-3 px-3 py-2 bg-gray-100 dark:bg-slate-800 rounded-lg">
+                            <div class="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center">
+                                <i class="fas fa-user-circle text-white text-xl"></i>
+                            </div>
+                            <div class="text-sm">
+                                <div class="font-medium text-gray-900 dark:text-white" id="userName">Admin User</div>
+                                <div class="text-gray-600 dark:text-slate-400 text-xs">Administrator</div>
+                            </div>
                         </div>
-                        <div class="user-details">
-                            <span class="user-name" id="userName">Admin User</span>
-                            <span class="user-role">Administrator</span>
+                        <button id="themeToggle" class="p-3 bg-gray-200 dark:bg-slate-800 hover:bg-gray-300 dark:hover:bg-slate-700 rounded-lg transition" title="Toggle Dark/Light Mode">
+                            <i class="fas fa-moon text-gray-700 dark:text-slate-300"></i>
+                        </button>
+                        <button id="logoutBtn" class="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+        
+        <!-- Main Content -->
+        <main class="max-w-full px-6 py-6 space-y-6">
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Total Profit Card -->
+                <div class="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-500/10 dark:to-blue-600/10 backdrop-blur-sm rounded-xl p-6 border border-blue-200 dark:border-blue-500/20 hover:border-blue-500/40 transition">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="p-3 bg-blue-500/20 rounded-lg">
+                            <i class="fas fa-rupee-sign text-blue-400 dark:text-blue-400 text-blue-600 text-2xl"></i>
                         </div>
                     </div>
-                    <button id="themeToggle" class="theme-toggle" title="Toggle Dark/Light Mode">
-                        <i class="fas fa-moon"></i>
-                    </button>
-                    <button id="logoutBtn" class="logout-btn-top">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
+                    <div>
+                        <h3 class="text-gray-600 dark:text-slate-400 text-sm font-medium mb-1">Total Profit</h3>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white mb-1" id="totalProfit">₹0</p>
+                        <span class="text-xs text-gray-500 dark:text-slate-500">From last month</span>
+                    </div>
                 </div>
-            </header>
+                
+                <!-- Lorry Loads Card -->
+                <div class="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-500/10 dark:to-purple-600/10 backdrop-blur-sm rounded-xl p-6 border border-purple-200 dark:border-purple-500/20 hover:border-purple-500/40 transition">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="p-3 bg-purple-500/20 rounded-lg">
+                            <i class="fas fa-truck text-purple-600 dark:text-purple-400 text-2xl"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-gray-600 dark:text-slate-400 text-sm font-medium mb-1">Lorry Loads</h3>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white mb-1" id="totalLoads">0</p>
+                        <span class="text-xs text-gray-500 dark:text-slate-500">Total deliveries</span>
+                    </div>
+                </div>
+                
+                <!-- Extra Spend Card -->
+                <div class="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-500/10 dark:to-orange-600/10 backdrop-blur-sm rounded-xl p-6 border border-orange-200 dark:border-orange-500/20 hover:border-orange-500/40 transition">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="p-3 bg-orange-500/20 rounded-lg">
+                            <i class="fas fa-hand-holding-usd text-orange-600 dark:text-orange-400 text-2xl"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 class="text-gray-600 dark:text-slate-400 text-sm font-medium mb-1">Extra Spend</h3>
+                        <p class="text-3xl font-bold text-gray-900 dark:text-white mb-1" id="driverExtras">₹0</p>
+                        <span class="text-xs text-gray-500 dark:text-slate-500">Additional costs</span>
+                    </div>
+                </div>
+            </div>
             
-            <!-- Dashboard Content -->
-            <div class="dashboard-content">
-                <!-- Statistics Cards -->
-                <div class="stats-grid">
-                    <div class="stat-card profit-card">
-                        <div class="stat-content">
-                            <div class="stat-header">
-                                <div class="stat-icon-wrapper">
-                                    <i class="fas fa-rupee-sign"></i>
-                                </div>
-                            </div>
-                            <div class="stat-body">
-                                <h3 class="stat-label">Total Profit</h3>
-                                <p class="stat-value" id="totalProfit">₹0</p>
-                                <span class="stat-subtitle">From last month</span>
-                            </div>
+            <!-- Charts Section -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Revenue Chart -->
+                <div class="bg-white dark:bg-slate-750 rounded-xl border border-gray-200 dark:border-slate-700 p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-chart-line text-blue-400"></i>
+                                Loads & Profit
+                            </h3>
+                            <span class="text-sm text-gray-600 dark:text-slate-400">Track monthly performance trends</span>
                         </div>
+                        <select id="chartTimeRange" class="px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="1">Last 1 Month</option>
+                            <option value="3">Last 3 Months</option>
+                            <option value="6" selected>Last 6 Months</option>
+                            <option value="12">Last 1 Year</option>
+                            <option value="all">All Time</option>
+                        </select>
                     </div>
-                    
-                    <div class="stat-card lorry-card">
-                        <div class="stat-content">
-                            <div class="stat-header">
-                                <div class="stat-icon-wrapper">
-                                    <i class="fas fa-truck"></i>
-                                </div>
-                            </div>
-                            <div class="stat-body">
-                                <h3 class="stat-label">Lorry Loads</h3>
-                                <p class="stat-value" id="totalLoads">0</p>
-                                <span class="stat-subtitle">Total deliveries</span>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="stat-card expense-card">
-                        <div class="stat-content">
-                            <div class="stat-header">
-                                <div class="stat-icon-wrapper">
-                                    <i class="fas fa-hand-holding-usd"></i>
-                                </div>
-                            </div>
-                            <div class="stat-body">
-                                <h3 class="stat-label">Extra Spend</h3>
-                                <p class="stat-value" id="driverExtras">₹0</p>
-                                <span class="stat-subtitle">Additional costs</span>
-                            </div>
-                        </div>
+                    <div class="h-64">
+                        <canvas id="revenueChart"></canvas>
                     </div>
                 </div>
                 
-                <!-- Charts Section -->
-                <div class="charts-grid">
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title-section">
-                                <h3><i class="fas fa-chart-line"></i> Loads & Profit</h3>
-                                <span class="chart-description">Track monthly performance trends</span>
-                            </div>
-                            <div class="chart-filter">
-                                <select id="chartTimeRange" class="chart-select">
-                                    <option value="1">Last 1 Month</option>
-                                    <option value="3">Last 3 Months</option>
-                                    <option value="6" selected>Last 6 Months</option>
-                                    <option value="12">Last 1 Year</option>
-                                    <option value="all">All Time</option>
-                                </select>
-                            </div>
+                <!-- Expense Chart -->
+                <div class="bg-white dark:bg-slate-750 rounded-xl border border-gray-200 dark:border-slate-700 p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-chart-pie text-purple-400"></i>
+                                Expense Distribution
+                            </h3>
+                            <span class="text-sm text-gray-600 dark:text-slate-400">Breakdown of spending categories</span>
                         </div>
-                        <div class="chart-body">
-                            <canvas id="revenueChart"></canvas>
+                        <div class="flex items-center gap-1 text-gray-500 dark:text-slate-400 text-sm">
+                            <i class="fas fa-info-circle"></i>
+                            <span>Same period</span>
                         </div>
                     </div>
-                    
-                    <div class="chart-card">
-                        <div class="chart-header">
-                            <div class="chart-title-section">
-                                <h3><i class="fas fa-chart-pie"></i> Expense Distribution</h3>
-                                <span class="chart-description">Breakdown of spending categories</span>
-                            </div>
-                            <div class="chart-info">
-                                <i class="fas fa-info-circle"></i>
-                                <span>Same period</span>
-                            </div>
+                    <div class="h-64">
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Data Table -->
+            <div class="bg-white dark:bg-slate-750 rounded-xl border border-gray-200 dark:border-slate-700 shadow-sm">
+                <div class="p-6 border-b border-gray-200 dark:border-slate-700">
+                    <div class="flex items-center justify-between flex-wrap gap-4">
+                        <div>
+                            <h3 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                <i class="fas fa-database text-green-400"></i>
+                                Business Records
+                            </h3>
+                            <span class="text-sm text-gray-600 dark:text-slate-400" id="recordCount">0 records</span>
                         </div>
-                        <div class="chart-body">
-                            <canvas id="expenseChart"></canvas>
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <select id="monthFilter" class="px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="all">All Months</option>
+                            </select>
+                            <select id="sortData" class="px-3 py-2 bg-white dark:bg-slate-800 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-slate-300 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                                <option value="date-desc">Date (Newest)</option>
+                                <option value="date-asc">Date (Oldest)</option>
+                                <option value="profit-desc">Profit (High)</option>
+                                <option value="profit-asc">Profit (Low)</option>
+                            </select>
+                            <button id="addRecordBtn" class="px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                                <i class="fas fa-plus"></i> Add Record
+                            </button>
+                            <button id="exportDataBtn" class="px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition flex items-center gap-2">
+                                <i class="fas fa-file-csv"></i> Export CSV
+                            </button>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Data Table -->
-                <div class="details-grid-full">
-                    <div class="detail-card">
-                        <div class="detail-header">
-                            <div class="header-title-section">
-                                <h3><i class="fas fa-database"></i> Business Records</h3>
-                                <span class="record-count" id="recordCount">0 records</span>
-                            </div>
-                            <div class="header-actions">
-                                <select id="sortData" class="sort-select">
-                                    <option value="date-desc">Date (Newest)</option>
-                                    <option value="date-asc">Date (Oldest)</option>
-                                    <option value="profit-desc">Profit (High)</option>
-                                    <option value="profit-asc">Profit (Low)</option>
-                                </select>
-                                <button id="addRecordBtn" class="action-btn add-btn">
-                                    <i class="fas fa-plus"></i> Add Record
-                                </button>
-                                <button id="exportDataBtn" class="action-btn export-btn">
-                                    <i class="fas fa-file-csv"></i> Export CSV
-                                </button>
-                            </div>
-                        </div>
-                        <div class="detail-body">
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Date</th>
-                                        <th>Vehicle Number</th>
-                                        <th>City</th>
-                                        <th>Company</th>
-                                        <th>Ton × Rate</th>
-                                        <th>Amount</th>
-                                        <th>Rate Fixed</th>
-                                        <th>Extra Spend</th>
-                                        <th>Profit</th>
-                                        <th>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="dataRecords">
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-slate-900 text-white border-b-2 border-blue-500">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-semibold">Date</th>
+                                <th class="px-4 py-3 text-left font-semibold">Vehicle Number</th>
+                                <th class="px-4 py-3 text-left font-semibold">City</th>
+                                <th class="px-4 py-3 text-left font-semibold">Company</th>
+                                <th class="px-4 py-3 text-left font-semibold">Ton × Rate</th>
+                                <th class="px-4 py-3 text-left font-semibold">Amount</th>
+                                <th class="px-4 py-3 text-left font-semibold">Rate Fixed</th>
+                                <th class="px-4 py-3 text-left font-semibold">Extra Spend</th>
+                                <th class="px-4 py-3 text-left font-semibold">Profit</th>
+                                <th class="px-4 py-3 text-left font-semibold">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dataRecords" class="divide-y divide-slate-700">
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </main>
     </div>
     
     <!-- Modal for Adding/Editing Record -->
-    <div id="recordModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="recordModalTitle">Add Record</h2>
-                <button class="modal-close" onclick="closeRecordModal()">
-                    <i class="fas fa-times"></i>
+    <div id="recordModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-750 rounded-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto border border-gray-200 dark:border-slate-700">
+            <div class="sticky top-0 bg-white dark:bg-slate-750 border-b border-gray-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+                <h2 id="recordModalTitle" class="text-xl font-semibold text-gray-900 dark:text-white">Add Record</h2>
+                <button onclick="closeRecordModal()" class="p-2 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition">
+                    <i class="fas fa-times text-gray-600 dark:text-slate-400"></i>
                 </button>
             </div>
-            <form id="recordForm" class="modal-form">
+            <form id="recordForm" class="p-6 space-y-6">
                 <input type="hidden" id="recordId">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="recordDate">Date</label>
-                        <input type="date" id="recordDate" required>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="recordDate" class="block text-sm font-medium text-slate-300 dark:text-slate-300 text-gray-700 mb-2">Date</label>
+                        <input type="date" id="recordDate" required 
+                               class="w-full px-4 py-2 bg-slate-800 dark:bg-slate-800 bg-white border border-slate-600 dark:border-slate-600 border-gray-300 rounded-lg text-white dark:text-white text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <div class="form-group">
-                        <label for="vehicleNumber">Vehicle Number</label>
-                        <input type="text" id="vehicleNumber" required placeholder="e.g., TN-01-AB-1234">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="city">City</label>
-                        <input type="text" id="city" required placeholder="Enter city name">
-                    </div>
-                    <div class="form-group">
-                        <label for="destination">Destination</label>
-                        <input type="text" id="destination" required placeholder="Enter destination">
+                    <div>
+                        <label for="vehicleNumber" class="block text-sm font-medium text-slate-300 dark:text-slate-300 text-gray-700 mb-2">Vehicle Number</label>
+                        <input type="text" id="vehicleNumber" required placeholder="e.g., TN-01-AB-1234"
+                               class="w-full px-4 py-2 bg-slate-800 dark:bg-slate-800 bg-white border border-slate-600 dark:border-slate-600 border-gray-300 rounded-lg text-white dark:text-white text-gray-900 placeholder-slate-500 dark:placeholder-slate-500 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="weightInTons">Weight in Tons</label>
-                        <input type="number" id="weightInTons" required placeholder="Enter weight" step="0.001" min="0">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="city" class="modal-label block text-sm font-medium text-slate-300 mb-2">City</label>
+                        <input type="text" id="city" required placeholder="Enter city name"
+                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <div class="form-group">
-                        <label for="ratePerTon">Rate per Ton (₹)</label>
-                        <input type="number" id="ratePerTon" required placeholder="Purchase rate" step="0.01">
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="amountSpend">Amount Spend (₹)</label>
-                        <input type="number" id="amountSpend" required placeholder="Total spent" step="0.01">
-                    </div>
-                    <div class="form-group">
-                        <label for="rateFixed">Rate Fixed (₹)</label>
-                        <input type="number" id="rateFixed" required placeholder="Selling rate" step="0.01">
+                    <div>
+                        <label for="destination" class="modal-label block text-sm font-medium text-slate-300 mb-2">Destination</label>
+                        <input type="text" id="destination" required placeholder="Enter destination"
+                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label for="extraSpend">Extra Spend (₹)</label>
-                        <input type="number" id="extraSpend" required placeholder="Food, labor, etc." step="0.01">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="weightInTons" class="modal-label block text-sm font-medium text-slate-300 mb-2">Weight in Tons</label>
+                        <input type="number" id="weightInTons" required placeholder="Enter weight" step="0.001" min="0"
+                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
-                    <div class="form-group">
-                        <label for="totalProfit">Total Profit (₹)</label>
-                        <input type="number" id="totalProfit" required placeholder="Auto-calculated" step="0.01" readonly>
+                    <div>
+                        <label for="ratePerTon" class="modal-label block text-sm font-medium text-slate-300 mb-2">Rate per Ton (₹)</label>
+                        <input type="number" id="ratePerTon" required placeholder="Purchase rate" step="0.01"
+                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" onclick="closeRecordModal()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save</button>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="amountSpend" class="modal-label block text-sm font-medium text-slate-300 mb-2">Amount Spend (₹)</label>
+                        <input type="number" id="amountSpend" required placeholder="Total spent" step="0.01"
+                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="rateWeFixed" class="modal-label block text-sm font-medium text-slate-300 mb-2">Rate Fixed (₹)</label>
+                        <input type="number" id="rateWeFixed" required placeholder="Selling rate" step="0.01"
+                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="extraSpend" class="modal-label block text-sm font-medium text-slate-300 mb-2">Extra Spend (₹)</label>
+                        <input type="number" id="extraSpend" required placeholder="Food, labor, etc." step="0.01"
+                               class="modal-input w-full px-4 py-2 bg-slate-800 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label for="totalProfit" class="modal-label block text-sm font-medium text-slate-300 mb-2">Total Profit (₹)</label>
+                        <input type="number" id="totalProfit" required placeholder="Auto-calculated" step="0.01" readonly
+                               class="modal-input w-full px-4 py-2 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-500 cursor-not-allowed">
+                    </div>
+                </div>
+                
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-gray-200 dark:border-slate-700">
+                    <button type="button" onclick="closeRecordModal()" class="px-6 py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-lg transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition">
+                        Save
+                    </button>
                 </div>
             </form>
         </div>
     </div>
     
     <!-- Logout Confirmation Modal -->
-    <div id="logoutModal" class="logout-modal">
-        <div class="logout-modal-content">
-            <div class="logout-modal-icon">
-                <i class="fas fa-sign-out-alt"></i>
+    <div id="logoutModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-750 rounded-2xl max-w-md w-full border border-gray-200 dark:border-slate-700 p-8 text-center">
+            <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-sign-out-alt text-red-400 text-2xl"></i>
             </div>
-            <h3>Confirm Logout</h3>
-            <p>Are you sure you want to logout from your dashboard?</p>
-            <div class="logout-modal-actions">
-                <button class="logout-cancel-btn" onclick="closeLogoutModal()">Cancel</button>
-                <button class="logout-confirm-btn" onclick="confirmLogout()">Logout</button>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white mb-2">Confirm Logout</h3>
+            <p class="text-gray-600 dark:text-slate-400 mb-6">Are you sure you want to logout from your dashboard?</p>
+            <div class="flex items-center gap-3 justify-center">
+                <button onclick="closeLogoutModal()" class="px-6 py-2 bg-gray-200 dark:bg-slate-700 hover:bg-gray-300 dark:hover:bg-slate-600 text-gray-900 dark:text-white rounded-lg transition">
+                    Cancel
+                </button>
+                <button onclick="confirmLogout()" class="px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition">
+                    Logout
+                </button>
             </div>
         </div>
     </div>
