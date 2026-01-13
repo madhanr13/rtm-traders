@@ -1,5 +1,5 @@
 // Dashboard Logic with CSV Backend Storage
-let API_URL = 'http://localhost:3000/api'; // Default fallback
+let API_URL = 'https://rtm-traders-api.onrender.com'; // Default fallback
 let businessRecords = [];
 let revenueChart, expenseChart;
 let dataSortOrder = 'date-desc';

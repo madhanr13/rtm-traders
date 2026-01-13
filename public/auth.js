@@ -1,5 +1,5 @@
 // Authentication Logic
-let API_URL = 'http://localhost:3000'; // Default fallback
+let API_URL = 'https://rtm-traders-api.onrender.com'; 
 
 // Fetch API URL from server config
 async function fetchConfig() {
