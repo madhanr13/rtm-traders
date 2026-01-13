@@ -1,0 +1,14 @@
+[build]
+  publish = "public"
+  command = "echo 'No build needed - static files'"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://rtm-traders-api.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
