@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RTM TRADERS - Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="dashboard-page">
+    <div class="dashboard-container">
+        <!-- Main Content -->
+        <main class="main-content-full">
+            <!-- Top Bar -->
+            <header class="topbar">
+                <div class="topbar-left">
+                    <div class="logo-brand">
+                        <div class="logo-circle">
+                            <img src="logo.jpg" alt="RTM Traders Logo">
+                        </div>
+                        <div class="logo-text">
+                            <h2>RTM TRADERS</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="topbar-center">
+                    <div class="welcome-section">
+                        <h1 class="welcome-title">Dashboard Overview</h1>
+                        <div class="date-badge">
+                            <i class="fas fa-calendar-day"></i>
+                            <span id="currentDate"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="topbar-right">
+                    <div class="user-section">
+                        <div class="user-avatar-circle">
+                            <i class="fas fa-user-circle"></i>
+                        </div>
+                        <div class="user-details">
+                            <span class="user-name" id="userName">Admin User</span>
+                            <span class="user-role">Administrator</span>
+                        </div>
+                    </div>
+                    <button id="themeToggle" class="theme-toggle" title="Toggle Dark/Light Mode">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                    <button id="logoutBtn" class="logout-btn-top">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+            
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Statistics Cards -->
+                <div class="stats-grid">
+                    <div class="stat-card profit-card">
+                        <div class="stat-content">
+                            <div class="stat-header">
+                                <div class="stat-icon-wrapper">
+                                    <i class="fas fa-rupee-sign"></i>
+                                </div>
+                            </div>
+                            <div class="stat-body">
+                                <h3 class="stat-label">Total Profit</h3>
+                                <p class="stat-value" id="totalProfit">₹0</p>
+                                <span class="stat-subtitle">From last month</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card lorry-card">
+                        <div class="stat-content">
+                            <div class="stat-header">
+                                <div class="stat-icon-wrapper">
+                                    <i class="fas fa-truck"></i>
+                                </div>
+                            </div>
+                            <div class="stat-body">
+                                <h3 class="stat-label">Lorry Loads</h3>
+                                <p class="stat-value" id="totalLoads">0</p>
+                                <span class="stat-subtitle">Total deliveries</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card expense-card">
+                        <div class="stat-content">
+                            <div class="stat-header">
+                                <div class="stat-icon-wrapper">
+                                    <i class="fas fa-hand-holding-usd"></i>
+                                </div>
+                            </div>
+                            <div class="stat-body">
+                                <h3 class="stat-label">Extra Spend</h3>
+                                <p class="stat-value" id="driverExtras">₹0</p>
+                                <span class="stat-subtitle">Additional costs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Section -->
+                <div class="charts-grid">
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title-section">
+                                <h3><i class="fas fa-chart-line"></i> Loads & Profit</h3>
+                                <span class="chart-description">Track monthly performance trends</span>
+                            </div>
+                            <div class="chart-filter">
+                                <select id="chartTimeRange" class="chart-select">
+                                    <option value="1">Last 1 Month</option>
+                                    <option value="3">Last 3 Months</option>
+                                    <option value="6" selected>Last 6 Months</option>
+                                    <option value="12">Last 1 Year</option>
+                                    <option value="all">All Time</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="revenueChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <div class="chart-title-section">
+                                <h3><i class="fas fa-chart-pie"></i> Expense Distribution</h3>
+                                <span class="chart-description">Breakdown of spending categories</span>
+                            </div>
+                            <div class="chart-info">
+                                <i class="fas fa-info-circle"></i>
+                                <span>Same period</span>
+                            </div>
+                        </div>
+                        <div class="chart-body">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Data Table -->
+                <div class="details-grid-full">
+                    <div class="detail-card">
+                        <div class="detail-header">
+                            <div class="header-title-section">
+                                <h3><i class="fas fa-database"></i> Business Records</h3>
+                                <span class="record-count" id="recordCount">0 records</span>
+                            </div>
+                            <div class="header-actions">
+                                <select id="sortData" class="sort-select">
+                                    <option value="date-desc">Date (Newest)</option>
+                                    <option value="date-asc">Date (Oldest)</option>
+                                    <option value="profit-desc">Profit (High)</option>
+                                    <option value="profit-asc">Profit (Low)</option>
+                                </select>
+                                <button id="addRecordBtn" class="action-btn add-btn">
+                                    <i class="fas fa-plus"></i> Add Record
+                                </button>
+                                <button id="exportDataBtn" class="action-btn export-btn">
+                                    <i class="fas fa-file-csv"></i> Export CSV
+                                </button>
+                            </div>
+                        </div>
+                        <div class="detail-body">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Date</th>
+                                        <th>Vehicle Number</th>
+                                        <th>City</th>
+                                        <th>Company</th>
+                                        <th>Ton × Rate</th>
+                                        <th>Amount</th>
+                                        <th>Rate Fixed</th>
+                                        <th>Extra Spend</th>
+                                        <th>Profit</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="dataRecords">
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <!-- Modal for Adding/Editing Record -->
+    <div id="recordModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="recordModalTitle">Add Record</h2>
+                <button class="modal-close" onclick="closeRecordModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <form id="recordForm" class="modal-form">
+                <input type="hidden" id="recordId">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="recordDate">Date</label>
+                        <input type="date" id="recordDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="vehicleNumber">Vehicle Number</label>
+                        <input type="text" id="vehicleNumber" required placeholder="e.g., TN-01-AB-1234">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="city">City</label>
+                        <input type="text" id="city" required placeholder="Enter city name">
+                    </div>
+                    <div class="form-group">
+                        <label for="destination">Destination</label>
+                        <input type="text" id="destination" required placeholder="Enter destination">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="weightInTons">Weight in Tons</label>
+                        <input type="number" id="weightInTons" required placeholder="Enter weight" step="0.001" min="0">
+                    </div>
+                    <div class="form-group">
+                        <label for="ratePerTon">Rate per Ton (₹)</label>
+                        <input type="number" id="ratePerTon" required placeholder="Purchase rate" step="0.01">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="amountSpend">Amount Spend (₹)</label>
+                        <input type="number" id="amountSpend" required placeholder="Total spent" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="rateFixed">Rate Fixed (₹)</label>
+                        <input type="number" id="rateFixed" required placeholder="Selling rate" step="0.01">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="extraSpend">Extra Spend (₹)</label>
+                        <input type="number" id="extraSpend" required placeholder="Food, labor, etc." step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="totalProfit">Total Profit (₹)</label>
+                        <input type="number" id="totalProfit" required placeholder="Auto-calculated" step="0.01" readonly>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeRecordModal()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Logout Confirmation Modal -->
+    <div id="logoutModal" class="logout-modal">
+        <div class="logout-modal-content">
+            <div class="logout-modal-icon">
+                <i class="fas fa-sign-out-alt"></i>
+            </div>
+            <h3>Confirm Logout</h3>
+            <p>Are you sure you want to logout from your dashboard?</p>
+            <div class="logout-modal-actions">
+                <button class="logout-cancel-btn" onclick="closeLogoutModal()">Cancel</button>
+                <button class="logout-confirm-btn" onclick="confirmLogout()">Logout</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="dashboard.js"></script>
+</body>
+</html>
