@@ -883,9 +883,9 @@ function getExpenseChartData() {
     });
     
     // Calculate totals for pie chart
-    const totalAmountSpend = filteredRecords.reduce((sum, r) => sum + r.amountSpend, 0);
-    const totalExtraSpend = filteredRecords.reduce((sum, r) => sum + r.extraSpend, 0);
-    const totalProfit = filteredRecords.reduce((sum, r) => sum + r.totalProfit, 0);
+    const totalAmountSpend = filteredRecords.reduce((sum, r) => sum + (r.amountSpend || 0), 0);
+    const totalExtraSpend = filteredRecords.reduce((sum, r) => sum + (r.extraSpend || 0), 0);
+    const totalProfit = filteredRecords.reduce((sum, r) => sum + (r.totalProfit || 0), 0);
     
     return {
         labels: ['Amount Spend', 'Extra Spend', 'Profit'],
@@ -934,9 +934,11 @@ function getExpenseChartOptions() {
                         if (label) {
                             label += ': ';
                         }
-                        label += formatCurrency(context.parsed);
-                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                        const percentage = ((context.parsed / total) * 100).toFixed(1);
+                        const value = context.parsed;
+                        const data = context.chart.data.datasets[0].data;
+                        const total = data.reduce((sum, val) => sum + (val || 0), 0);
+                        label += formatCurrency(value);
+                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
                         label += ' (' + percentage + '%)';
                         return label;
                     }
