@@ -252,17 +252,26 @@ app.delete('/api/records/:id', authenticateToken, async (req, res) => {
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     
+    console.log('🔐 Login attempt with username:', username);
+    console.log('📝 Available users:', Object.keys(USERS));
+    
     // Check if user exists
     const user = USERS[username];
     
     if (!user) {
+        console.log('❌ User not found:', username);
         return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
+    
+    console.log('✅ User found:', username);
     
     // Verify password
     const validPassword = await bcrypt.compare(password, user.password);
     
+    console.log('🔑 Password verification result:', validPassword);
+    
     if (!validPassword) {
+        console.log('❌ Invalid password for user:', username);
         return res.status(401).json({ success: false, error: 'Invalid credentials' });
     }
     
@@ -275,6 +284,8 @@ app.post('/api/login', async (req, res) => {
         JWT_SECRET,
         { expiresIn: JWT_EXPIRES_IN }
     );
+    
+    console.log('✅ Login successful for user:', username);
     
     res.json({ 
         success: true, 

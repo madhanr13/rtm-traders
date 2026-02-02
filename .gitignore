@@ -5,6 +5,9 @@ package-lock.json
 # Environment Variables
 .env
 
+# Password utilities (security sensitive)
+change-password.js
+
 # Data Files
 data.csv
 
