@@ -46,6 +46,20 @@ app.use((req, res, next) => {
     next();
 });
 
+// Security middleware - Prevent credentials in query strings and URLs
+app.use((req, res, next) => {
+    // If login request comes via GET, reject it
+    if (req.method === 'GET' && req.path === '/api/login') {
+        return res.status(400).json({ error: 'Login must use POST method' });
+    }
+    // Redirect if query params contain sensitive keywords
+    if (req.url.includes('password=') || req.url.includes('username=')) {
+        console.warn('⚠️ WARNING: Credentials detected in URL query parameters! Blocking request.');
+        return res.status(400).json({ error: 'Invalid request format' });
+    }
+    next();
+});
+
 // JWT Authentication Middleware
 function authenticateToken(req, res, next) {
     const authHeader = req.headers['authorization'];

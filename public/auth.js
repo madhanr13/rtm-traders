@@ -36,17 +36,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();
+        e.stopPropagation();
         
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const submitBtn = loginForm.querySelector('.submit-btn');
+        
+        // Validate input
+        if (!username || !password) {
+            errorMessage.textContent = 'Please enter both email and password.';
+            errorMessage.classList.remove('hidden');
+            return;
+        }
         
         // Disable button and show loading
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
         
         try {
-            // Send login request to server
+            // Send login request to server with POST method
             const response = await fetch(`${API_URL}/api/login`, {
                 method: 'POST',
                 headers: {
