@@ -354,7 +354,7 @@ function updateStatistics() {
     const totalLoads = businessRecords.length;
     const totalExtraSpend = businessRecords.reduce((sum, record) => sum + record.extraSpend, 0);
     const totalPendingAmount = businessRecords.reduce((sum, record) => {
-        return sum + (record.amountReceived ? 0 : (record.amountSpend || 0));
+        return sum + (record.amountReceived ? 0 : ((record.amountSpend || 0) + (record.totalProfit || 0)));
     }, 0);
     
     // Animate statistics
@@ -1144,7 +1144,7 @@ function getPendingChartData() {
     let pendingAmount = 0;
     
     filteredRecords.forEach(record => {
-        const amount = parseFloat(record.amountSpend) || 0;
+        const amount = (parseFloat(record.amountSpend) || 0) + (parseFloat(record.totalProfit) || 0);
         if (record.amountReceived) {
             receivedAmount += amount;
         } else {
