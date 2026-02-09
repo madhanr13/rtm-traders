@@ -125,7 +125,8 @@ app.get('/api/records', authenticateToken, async (req, res) => {
             ratePerTon: record.ratePerTon,
             amountSpend: record.amountSpend,
             rateWeFixed: record.rateWeFixed,
-            totalProfit: record.totalProfit
+            totalProfit: record.totalProfit,
+            amountReceived: record.amountReceived || false
         }));
         res.json(formattedRecords);
     } catch (error) {
@@ -152,7 +153,8 @@ app.post('/api/records', authenticateToken, async (req, res) => {
             ratePerTon: parseFloat(req.body.ratePerTon),
             amountSpend: parseFloat(req.body.amountSpend),
             rateWeFixed: parseFloat(req.body.rateWeFixed),
-            totalProfit: parseFloat(req.body.totalProfit)
+            totalProfit: parseFloat(req.body.totalProfit),
+            amountReceived: Boolean(req.body.amountReceived) || false
         });
         
         console.log('💾 Attempting to save record to MongoDB...');
@@ -169,7 +171,8 @@ app.post('/api/records', authenticateToken, async (req, res) => {
             ratePerTon: savedRecord.ratePerTon,
             amountSpend: savedRecord.amountSpend,
             rateWeFixed: savedRecord.rateWeFixed,
-            totalProfit: savedRecord.totalProfit
+            totalProfit: savedRecord.totalProfit,
+            amountReceived: savedRecord.amountReceived || false
         };
         
         res.json(formattedRecord);
@@ -199,7 +202,8 @@ app.put('/api/records/:id', authenticateToken, async (req, res) => {
                 ratePerTon: parseFloat(req.body.ratePerTon),
                 amountSpend: parseFloat(req.body.amountSpend),
                 rateWeFixed: parseFloat(req.body.rateWeFixed),
-                totalProfit: parseFloat(req.body.totalProfit)
+                totalProfit: parseFloat(req.body.totalProfit),
+                amountReceived: Boolean(req.body.amountReceived)
             },
             { new: true }
         );
@@ -218,13 +222,60 @@ app.put('/api/records/:id', authenticateToken, async (req, res) => {
             ratePerTon: updatedRecord.ratePerTon,
             amountSpend: updatedRecord.amountSpend,
             rateWeFixed: updatedRecord.rateWeFixed,
-            totalProfit: updatedRecord.totalProfit
+            totalProfit: updatedRecord.totalProfit,
+            amountReceived: updatedRecord.amountReceived || false
         };
         
         res.json(formattedRecord);
     } catch (error) {
         console.error('Error updating record:', error);
         res.status(500).json({ error: 'Failed to update record' });
+    }
+});
+
+// Update amount received status only
+app.patch('/api/records/:id/amount-received', authenticateToken, async (req, res) => {
+    try {
+        const recordId = req.params.id;
+        const { amountReceived } = req.body;
+        
+        console.log(`🔄 Updating amount received status for record ${recordId}: ${amountReceived}`);
+        
+        // Try to find and update from all monthly collections
+        const db = mongoose.connection.db;
+        const collections = await db.listCollections().toArray();
+        const recordCollections = collections
+            .filter(col => col.name.startsWith('records_'))
+            .map(col => col.name);
+        
+        let updatedRecord = null;
+        
+        for (const collectionName of recordCollections) {
+            const Model = mongoose.model(collectionName, require('./models/Record').recordSchema, collectionName);
+            updatedRecord = await Model.findByIdAndUpdate(
+                recordId,
+                { amountReceived: Boolean(amountReceived) },
+                { new: true }
+            );
+            
+            if (updatedRecord) {
+                console.log(`✅ Updated record in collection: ${collectionName}`);
+                break;
+            }
+        }
+        
+        if (!updatedRecord) {
+            return res.status(404).json({ error: 'Record not found' });
+        }
+        
+        res.json({ 
+            success: true, 
+            id: updatedRecord._id,
+            amountReceived: updatedRecord.amountReceived
+        });
+    } catch (error) {
+        console.error('❌ Error updating amount received status:', error);
+        res.status(500).json({ error: 'Failed to update amount received status' });
     }
 });
 

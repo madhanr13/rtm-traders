@@ -32,6 +32,11 @@ const recordSchema = new mongoose.Schema({
     totalProfit: {
         type: Number,
         required: true
+    },
+    amountReceived: {
+        type: Boolean,
+        required: true,
+        default: false
     }
 }, {
     timestamps: true

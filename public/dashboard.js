@@ -1,7 +1,7 @@
 // Dashboard Logic with CSV Backend Storage
 let API_URL = 'https://rtm-traders-api.onrender.com'; // Default fallback
 let businessRecords = [];
-let revenueChart, expenseChart;
+let revenueChart, expenseChart, pendingChart;
 let dataSortOrder = 'date-desc';
 let selectedMonth = 'all';
 const MAX_DISPLAY_RECORDS = 15;
@@ -353,12 +353,16 @@ function updateStatistics() {
     const totalInvestment = businessRecords.reduce((sum, record) => sum + record.amountSpend, 0);
     const totalLoads = businessRecords.length;
     const totalExtraSpend = businessRecords.reduce((sum, record) => sum + record.extraSpend, 0);
+    const totalPendingAmount = businessRecords.reduce((sum, record) => {
+        return sum + (record.amountReceived ? 0 : (record.amountSpend || 0));
+    }, 0);
     
     // Animate statistics
     animateValue(document.getElementById('totalProfit'), 0, totalProfit, 1500);
     animateValue(document.getElementById('totalInvestment'), 0, totalInvestment, 1500);
     animateValue(document.getElementById('totalLoads'), 0, totalLoads, 1500);
     animateValue(document.getElementById('driverExtras'), 0, totalExtraSpend, 1500);
+    animateValue(document.getElementById('totalPendingAmount'), 0, totalPendingAmount, 1500);
 }
 
 function animateValue(element, start, end, duration) {
@@ -416,7 +420,7 @@ function renderRecords() {
     if (filteredRecords.length === 0) {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td colspan="10" class="px-4 py-12 text-center">
+            <td colspan="11" class="px-4 py-12 text-center">
                 <div class="flex flex-col items-center gap-3">
                     <i class="fas fa-database text-4xl text-gray-400 dark:text-slate-600"></i>
                     <h3 class="text-lg font-semibold text-gray-600 dark:text-slate-400">No Records Found</h3>
@@ -448,6 +452,17 @@ function renderRecords() {
             <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatCurrency(record.amountSpend)}</td>
             <td class="px-4 py-3 text-gray-700 dark:text-slate-300">${formatCurrency(record.rateWeFixed)}</td>
             <td class="px-4 py-3 ${profitClass}">${formatCurrency(record.totalProfit)}</td>
+            <td class="px-4 py-3 text-center">
+                <label class="inline-flex items-center cursor-pointer">
+                    <input type="checkbox" 
+                           ${record.amountReceived ? 'checked' : ''}
+                           onchange="toggleAmountReceived('${record.id}', this.checked)"
+                           class="w-5 h-5 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 dark:focus:ring-green-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <span class="ml-2 text-sm font-medium ${record.amountReceived ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}">
+                        ${record.amountReceived ? 'Received' : 'Pending'}
+                    </span>
+                </label>
+            </td>
             <td class="px-4 py-3 text-center">
                 <button onclick="editRecord('${record.id}')" class="p-2 text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-500/10 rounded transition">
                     <i class="fas fa-edit"></i>
@@ -519,6 +534,7 @@ function editRecord(id) {
     document.getElementById('amountSpend').value = record.amountSpend;
     document.getElementById('rateWeFixed').value = record.rateWeFixed;
     document.getElementById('totalProfit').value = record.totalProfit;
+    document.getElementById('amountReceived').checked = record.amountReceived || false;
     const modal = document.getElementById('recordModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
@@ -564,8 +580,9 @@ async function handleRecordFormSubmit(e) {
         const amountSpend = parseFloat(document.getElementById('amountSpend').value);
         const rateWeFixed = parseFloat(document.getElementById('rateWeFixed').value);
         const totalProfit = parseFloat(document.getElementById('totalProfit').value);
+        const amountReceived = document.getElementById('amountReceived').checked;
         
-        const recordData = { date, vehicleNumber, destination, weightInTons, ratePerTon, amountSpend, rateWeFixed, totalProfit };
+        const recordData = { date, vehicleNumber, destination, weightInTons, ratePerTon, amountSpend, rateWeFixed, totalProfit, amountReceived };
         
         if (id) {
             // Edit existing record
@@ -582,6 +599,7 @@ async function handleRecordFormSubmit(e) {
                 record.amountSpend = amountSpend;
                 record.rateWeFixed = rateWeFixed;
                 record.totalProfit = totalProfit;
+                record.amountReceived = amountReceived;
             }
         } else {
             // Add new record
@@ -606,7 +624,7 @@ async function handleRecordFormSubmit(e) {
 
 // Export to CSV Function
 function exportDataToCSV() {
-    const headers = ['Date', 'Vehicle Number', 'City', 'Destination', 'Weight (Tons)', 'Rate per Ton', 'Amount Spend', 'Rate Fixed', 'Extra Spend', 'Total Profit'];
+    const headers = ['Date', 'Vehicle Number', 'City', 'Destination', 'Weight (Tons)', 'Rate per Ton', 'Amount Spend', 'Rate Fixed', 'Extra Spend', 'Total Profit', 'Amount Received'];
     const rows = businessRecords.map(record => [
         record.date,
         record.vehicleNumber,
@@ -617,7 +635,8 @@ function exportDataToCSV() {
         record.amountSpend,
         record.rateWeFixed,
         record.extraSpend,
-        record.totalProfit
+        record.totalProfit,
+        record.amountReceived ? 'Yes' : 'No'
     ]);
     
     const timestamp = new Date().toISOString().split('T')[0];
@@ -670,6 +689,16 @@ function initializeCharts() {
             options: getExpenseChartOptions()
         });
     }
+    
+    // Pending Amount Chart
+    const pendingCtx = document.getElementById('pendingChart');
+    if (pendingCtx) {
+        pendingChart = new Chart(pendingCtx.getContext('2d'), {
+            type: 'doughnut',
+            data: getPendingChartData(),
+            options: getPendingChartOptions()
+        });
+    }
 }
 
 function updateCharts() {
@@ -677,12 +706,21 @@ function updateCharts() {
         revenueChart.data = getRevenueChartData();
         revenueChart.update();
     }
+    if (expenseChart) {
+        expenseChart.data = getExpenseChartData();
+        expenseChart.update();
+    }
+    if (pendingChart) {
+        pendingChart.data = getPendingChartData();
+        pendingChart.update();
+    }
+}
     
     if (expenseChart) {
         expenseChart.data = getExpenseChartData();
         expenseChart.update();
     }
-}
+
 
 function getRevenueChartData() {
     // Get time range from dropdown
@@ -884,16 +922,14 @@ function getExpenseChartData() {
     
     // Calculate totals for pie chart
     const totalAmountSpend = filteredRecords.reduce((sum, r) => sum + (r.amountSpend || 0), 0);
-    const totalExtraSpend = filteredRecords.reduce((sum, r) => sum + (r.extraSpend || 0), 0);
     const totalProfit = filteredRecords.reduce((sum, r) => sum + (r.totalProfit || 0), 0);
     
     return {
-        labels: ['Amount Spend', 'Extra Spend', 'Profit'],
+        labels: ['Amount Spend', 'Profit'],
         datasets: [{
-            data: [totalAmountSpend, totalExtraSpend, totalProfit],
+            data: [totalAmountSpend, totalProfit],
             backgroundColor: [
                 'rgba(99, 102, 241, 0.8)',
-                'rgba(245, 158, 11, 0.8)',
                 'rgba(16, 185, 129, 0.8)'
             ],
             borderColor: '#1e293b',
@@ -1038,5 +1074,147 @@ function updateChartColors() {
         expenseChart.options.plugins.legend.labels.color = isDark ? '#e8eaed' : '#202124';
         expenseChart.update();
     }
+    
+    // Update pending chart colors
+    if (pendingChart) {
+        pendingChart.options.plugins.legend.labels.color = isDark ? '#e8eaed' : '#202124';
+        pendingChart.update();
+    }
+}
+
+// Toggle Amount Received Status
+async function toggleAmountReceived(recordId, isReceived) {
+    // Find the checkbox and label to update immediately
+    const checkbox = document.querySelector(`input[onchange*="${recordId}"]`);
+    const label = checkbox ? checkbox.nextElementSibling : null;
+    
+    // Update UI immediately for instant feedback
+    if (label) {
+        label.className = `ml-2 text-sm font-medium ${isReceived ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`;
+        label.textContent = isReceived ? 'Received' : 'Pending';
+    }
+    
+    try {
+        const response = await fetch(`${API_URL}/records/${recordId}/amount-received`, {
+            method: 'PATCH',
+            headers: getAuthHeaders(),
+            body: JSON.stringify({ amountReceived: isReceived })
+        });
+        
+        if (!response.ok) {
+            throw new Error('Failed to update amount received status');
+        }
+        
+        // Update local data
+        const record = businessRecords.find(r => r.id === recordId);
+        if (record) {
+            record.amountReceived = isReceived;
+        }
+        
+        // Update statistics and charts to reflect new pending amounts
+        updateStatistics();
+        updateCharts();
+        
+        // Show success notification
+        showNotification(
+            isReceived ? 'Amount marked as received' : 'Amount marked as pending', 
+            'success'
+        );
+        
+    } catch (error) {
+        console.error('Error updating amount received status:', error);
+        showNotification('Error updating payment status', 'error');
+        
+        // Revert checkbox and label state on error
+        if (checkbox) {
+            checkbox.checked = !isReceived;
+        }
+        if (label) {
+            label.className = `ml-2 text-sm font-medium ${!isReceived ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`;
+            label.textContent = !isReceived ? 'Received' : 'Pending';
+        }
+    }
+}
+
+// Get Pending Chart Data
+function getPendingChartData() {
+    const filteredRecords = getFilteredRecords();
+    
+    let receivedAmount = 0;
+    let pendingAmount = 0;
+    
+    filteredRecords.forEach(record => {
+        const amount = parseFloat(record.amountSpend) || 0;
+        if (record.amountReceived) {
+            receivedAmount += amount;
+        } else {
+            pendingAmount += amount;
+        }
+    });
+    
+    return {
+        labels: ['Received', 'Pending'],
+        datasets: [{
+            data: [receivedAmount, pendingAmount],
+            backgroundColor: [
+                '#10B981',  // Green for received
+                '#F59E0B'   // Amber for pending
+            ],
+            borderWidth: 0,
+            cutout: '60%'
+        }]
+    };
+}
+
+// Get Pending Chart Options
+function getPendingChartOptions() {
+    const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+    
+    return {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom',
+                labels: {
+                    padding: 20,
+                    usePointStyle: true,
+                    font: {
+                        size: 12
+                    },
+                    color: isDark ? '#e8eaed' : '#202124'
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(context) {
+                        const value = context.parsed;
+                        const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                        const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : 0;
+                        return `${context.label}: ${formatCurrency(value)} (${percentage}%)`;
+                    }
+                }
+            }
+        }
+    };
+}
+
+// Helper function to get filtered records for charts
+function getFilteredRecords() {
+    const timeRange = document.getElementById('chartTimeRange')?.value || '6';
+    let filteredRecords = businessRecords;
+    
+    if (timeRange !== 'all') {
+        const monthsBack = parseInt(timeRange);
+        const cutoffDate = new Date();
+        cutoffDate.setMonth(cutoffDate.getMonth() - monthsBack);
+        
+        filteredRecords = businessRecords.filter(record => {
+            const recordDate = new Date(record.date);
+            return recordDate >= cutoffDate;
+        });
+    }
+    
+    return filteredRecords;
 }
 
