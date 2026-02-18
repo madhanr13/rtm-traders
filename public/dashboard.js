@@ -307,19 +307,20 @@ function setupEventListeners() {
     const weightInTons = document.getElementById('weightInTons');
     const ratePerTon = document.getElementById('ratePerTon');
     const rateWeFixed = document.getElementById('rateWeFixed');
+    const amountSpend = document.getElementById('amountSpend');
     const totalProfit = document.getElementById('totalProfit');
     
-    if (weightInTons && ratePerTon && rateWeFixed && totalProfit) {
+    if (weightInTons && rateWeFixed && amountSpend && totalProfit) {
         const calculateProfit = () => {
             const weight = parseFloat(weightInTons.value) || 0;
-            const ratePurchase = parseFloat(ratePerTon.value) || 0;
-            const rateSelling = parseFloat(rateWeFixed.value) || 0;
-            totalProfit.value = (weight * (rateSelling - ratePurchase)).toFixed(2);
+            const rateFixed = parseFloat(rateWeFixed.value) || 0;
+            const amount = parseFloat(amountSpend.value) || 0;
+            totalProfit.value = (weight * rateFixed - amount).toFixed(2);
         };
         
         weightInTons.addEventListener('input', calculateProfit);
-        ratePerTon.addEventListener('input', calculateProfit);
         rateWeFixed.addEventListener('input', calculateProfit);
+        amountSpend.addEventListener('input', calculateProfit);
     }
     
     // Close modal on outside click
