@@ -303,26 +303,6 @@ function setupEventListeners() {
         });
     }
     
-    // Auto-calculate profit when weight or rate changes
-    const weightInTons = document.getElementById('weightInTons');
-    const ratePerTon = document.getElementById('ratePerTon');
-    const rateWeFixed = document.getElementById('rateWeFixed');
-    const amountSpend = document.getElementById('amountSpend');
-    const totalProfit = document.getElementById('totalProfit');
-    
-    if (weightInTons && rateWeFixed && amountSpend && totalProfit) {
-        const calculateProfit = () => {
-            const weight = parseFloat(weightInTons.value) || 0;
-            const rateFixed = parseFloat(rateWeFixed.value) || 0;
-            const amount = parseFloat(amountSpend.value) || 0;
-            totalProfit.value = (weight * rateFixed - amount).toFixed(2);
-        };
-        
-        weightInTons.addEventListener('input', calculateProfit);
-        rateWeFixed.addEventListener('input', calculateProfit);
-        amountSpend.addEventListener('input', calculateProfit);
-    }
-    
     // Close modal on outside click
     window.addEventListener('click', function(event) {
         const recordModal = document.getElementById('recordModal');
@@ -500,6 +480,110 @@ function sortData(data, sortOrder) {
     });
 }
 
+// Setup real-time calculations for the modal form
+function setupFormCalculations() {
+    const weightInTons = document.getElementById('weightInTons');
+    const ratePerTon = document.getElementById('ratePerTon');
+    const rateWeFixed = document.getElementById('rateWeFixed');
+    const amountSpend = document.getElementById('amountSpend');
+    const totalProfit = document.getElementById('totalProfit');
+    
+    if (!weightInTons || !ratePerTon || !amountSpend || !rateWeFixed || !totalProfit) {
+        console.warn('Some form elements not found for calculations');
+        return;
+    }
+    
+    // Remove any existing event listeners to prevent duplicates
+    const newWeightInTons = weightInTons.cloneNode(true);
+    const newRatePerTon = ratePerTon.cloneNode(true);
+    const newRateWeFixed = rateWeFixed.cloneNode(true);
+    
+    weightInTons.parentNode.replaceChild(newWeightInTons, weightInTons);
+    ratePerTon.parentNode.replaceChild(newRatePerTon, ratePerTon);
+    rateWeFixed.parentNode.replaceChild(newRateWeFixed, rateWeFixed);
+    
+    // Get the new elements
+    const freshWeightInTons = document.getElementById('weightInTons');
+    const freshRatePerTon = document.getElementById('ratePerTon');
+    const freshRateWeFixed = document.getElementById('rateWeFixed');
+    
+    // Define calculation functions
+    const calculateAmountSpend = () => {
+        const weight = parseFloat(freshWeightInTons.value) || 0;
+        const rate = parseFloat(freshRatePerTon.value) || 0;
+        amountSpend.value = (weight * rate).toFixed(2);
+    };
+    
+    const calculateProfit = () => {
+        const weight = parseFloat(freshWeightInTons.value) || 0;
+        const rateFixed = parseFloat(freshRateWeFixed.value) || 0;
+        const amount = parseFloat(amountSpend.value) || 0;
+        totalProfit.value = (weight * rateFixed - amount).toFixed(2);
+    };
+    
+    const calculateBoth = () => {
+        calculateAmountSpend();
+        calculateProfit();
+    };
+    
+    // Add event listeners for real-time calculations
+    freshWeightInTons.addEventListener('input', calculateBoth);
+    freshRatePerTon.addEventListener('input', calculateBoth);
+    freshRateWeFixed.addEventListener('input', calculateProfit);
+}
+
+// Setup real-time calculations for the modal form
+function setupFormCalculations() {
+    const weightInTons = document.getElementById('weightInTons');
+    const ratePerTon = document.getElementById('ratePerTon');
+    const rateWeFixed = document.getElementById('rateWeFixed');
+    const amountSpend = document.getElementById('amountSpend');
+    const totalProfit = document.getElementById('totalProfit');
+    
+    if (!weightInTons || !ratePerTon || !amountSpend || !rateWeFixed || !totalProfit) {
+        console.warn('Some form elements not found for calculations');
+        return;
+    }
+    
+    // Remove any existing event listeners to prevent duplicates
+    const newWeightInTons = weightInTons.cloneNode(true);
+    const newRatePerTon = ratePerTon.cloneNode(true);
+    const newRateWeFixed = rateWeFixed.cloneNode(true);
+    
+    weightInTons.parentNode.replaceChild(newWeightInTons, weightInTons);
+    ratePerTon.parentNode.replaceChild(newRatePerTon, ratePerTon);
+    rateWeFixed.parentNode.replaceChild(newRateWeFixed, rateWeFixed);
+    
+    // Get the new elements
+    const freshWeightInTons = document.getElementById('weightInTons');
+    const freshRatePerTon = document.getElementById('ratePerTon');
+    const freshRateWeFixed = document.getElementById('rateWeFixed');
+    
+    // Define calculation functions
+    const calculateAmountSpend = () => {
+        const weight = parseFloat(freshWeightInTons.value) || 0;
+        const rate = parseFloat(freshRatePerTon.value) || 0;
+        amountSpend.value = (weight * rate).toFixed(2);
+    };
+    
+    const calculateProfit = () => {
+        const weight = parseFloat(freshWeightInTons.value) || 0;
+        const rateFixed = parseFloat(freshRateWeFixed.value) || 0;
+        const amount = parseFloat(amountSpend.value) || 0;
+        totalProfit.value = (weight * rateFixed - amount).toFixed(2);
+    };
+    
+    const calculateBoth = () => {
+        calculateAmountSpend();
+        calculateProfit();
+    };
+    
+    // Add event listeners for real-time calculations
+    freshWeightInTons.addEventListener('input', calculateBoth);
+    freshRatePerTon.addEventListener('input', calculateBoth);
+    freshRateWeFixed.addEventListener('input', calculateProfit);
+}
+
 // Modal Functions for Records
 function openAddRecordModal() {
     document.getElementById('recordModalTitle').textContent = 'Add Record';
@@ -511,6 +595,9 @@ function openAddRecordModal() {
     const modal = document.getElementById('recordModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    
+    // Setup calculations after modal is visible
+    setTimeout(setupFormCalculations, 100);
 }
 
 function closeRecordModal() {
@@ -539,6 +626,9 @@ function editRecord(id) {
     const modal = document.getElementById('recordModal');
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    
+    // Setup calculations after modal is visible
+    setTimeout(setupFormCalculations, 100);
 }
 
 window.editRecord = editRecord;
