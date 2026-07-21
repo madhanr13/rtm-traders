@@ -1,5 +1,5 @@
 // Authentication Logic
-let API_URL = 'https://rtm-traders-api.onrender.com'; 
+let API_URL = 'https://rtm-traders-api.onrender.com';
 
 // Fetch API URL from server config
 async function fetchConfig() {
@@ -12,101 +12,79 @@ async function fetchConfig() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', async function() {
-    // Fetch API configuration first
+document.addEventListener('DOMContentLoaded', async function () {
     await fetchConfig();
-    
-    // Initialize theme
-    initializeLoginTheme();
-    
+
     const loginForm = document.getElementById('loginForm');
     const errorMessage = document.getElementById('errorMessage');
-    
+
     // Check if user is already logged in with valid token
     const token = localStorage.getItem('authToken');
     if (token) {
         verifyTokenAndRedirect(token);
     }
-    
-    // Theme toggle
-    const themeToggleLogin = document.getElementById('themeToggleLogin');
-    if (themeToggleLogin) {
-        themeToggleLogin.addEventListener('click', toggleLoginTheme);
-    }
-    
-    loginForm.addEventListener('submit', async function(e) {
+
+    loginForm.addEventListener('submit', async function (e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         const username = document.getElementById('username').value;
         const password = document.getElementById('password').value;
         const submitBtn = loginForm.querySelector('.submit-btn');
-        
+
         // Validate input
         if (!username || !password) {
             errorMessage.textContent = 'Please enter both email and password.';
-            errorMessage.classList.remove('hidden');
+            errorMessage.style.display = 'block';
             return;
         }
-        
+
         // Disable button and show loading
         submitBtn.disabled = true;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In...';
-        
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Signing In…';
+
         try {
-            // Send login request to server with POST method
             const response = await fetch(`${API_URL}/api/login`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ username, password })
             });
-            
+
             const data = await response.json();
-            
+
             if (response.ok && data.success) {
-                // Store JWT token
                 localStorage.setItem('authToken', data.token);
                 localStorage.setItem('username', data.user.username);
                 localStorage.setItem('userName', data.user.name);
-                
-                // Show success and redirect
+
                 submitBtn.innerHTML = '<i class="fas fa-check-circle"></i> Success!';
                 setTimeout(() => {
                     window.location.href = 'dashboard.html';
                 }, 500);
             } else {
-                // Show error message
                 errorMessage.textContent = data.error || 'Invalid username or password. Please try again.';
-                errorMessage.classList.remove('hidden');
-                
-                // Reset button
+                errorMessage.style.display = 'block';
+
                 submitBtn.disabled = false;
-                submitBtn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right"></i>';
-                
-                // Shake animation for error
+                submitBtn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right" style="font-size:12px;"></i>';
+
                 loginForm.style.animation = 'shake 0.5s';
-                setTimeout(() => {
-                    loginForm.style.animation = '';
-                }, 500);
+                setTimeout(() => { loginForm.style.animation = ''; }, 500);
             }
         } catch (error) {
             console.error('Login error:', error);
             errorMessage.textContent = 'Connection error. Please ensure the server is running.';
-            errorMessage.classList.remove('hidden');
-            
-            // Reset button
+            errorMessage.style.display = 'block';
+
             submitBtn.disabled = false;
-            submitBtn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right"></i>';
+            submitBtn.innerHTML = '<span>Sign In</span><i class="fas fa-arrow-right" style="font-size:12px;"></i>';
         }
     });
-    
-    // Clear error message on input
-    const inputs = document.querySelectorAll('input');
-    inputs.forEach(input => {
-        input.addEventListener('input', function() {
-            errorMessage.classList.add('hidden');
+
+    // Clear error on input
+    document.querySelectorAll('input').forEach(input => {
+        input.addEventListener('input', () => {
+            errorMessage.style.display = 'none';
         });
     });
 });
@@ -115,16 +93,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 async function verifyTokenAndRedirect(token) {
     try {
         const response = await fetch(`${API_URL}/api/verify`, {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
+            headers: { 'Authorization': `Bearer ${token}` }
         });
-        
         if (response.ok) {
-            // Token is valid, redirect to dashboard
             window.location.href = 'dashboard.html';
         } else {
-            // Token is invalid, clear it
             localStorage.removeItem('authToken');
             localStorage.removeItem('username');
             localStorage.removeItem('userName');
@@ -133,40 +106,3 @@ async function verifyTokenAndRedirect(token) {
         console.error('Token verification error:', error);
     }
 }
-
-// Theme Toggle Functions for Login Page
-function initializeLoginTheme() {
-    const savedTheme = localStorage.getItem('theme') || 'dark';
-    document.documentElement.setAttribute('data-theme', savedTheme);
-    updateLoginThemeIcon(savedTheme);
-}
-
-function toggleLoginTheme() {
-    const currentTheme = document.documentElement.getAttribute('data-theme');
-    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-    
-    document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
-    updateLoginThemeIcon(newTheme);
-}
-
-function updateLoginThemeIcon(theme) {
-    const themeToggle = document.getElementById('themeToggleLogin');
-    if (themeToggle) {
-        const icon = themeToggle.querySelector('i');
-        if (icon) {
-            icon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
-        }
-    }
-}
-
-// Shake animation CSS
-const style = document.createElement('style');
-style.textContent = `
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-10px); }
-        20%, 40%, 60%, 80% { transform: translateX(10px); }
-    }
-`;
-document.head.appendChild(style);

@@ -94,6 +94,9 @@ app.get('/api/records', authenticateToken, async (req, res) => {
         
         // Get all collection names that match the pattern records_YYYY_MM
         const db = mongoose.connection.db;
+        if (!db) {
+            return res.status(503).json({ error: 'Database is still connecting, please try again in a moment' });
+        }
         const collections = await db.listCollections().toArray();
         const recordCollections = collections
             .filter(col => col.name.startsWith('records_'))
